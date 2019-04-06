@@ -38,8 +38,7 @@ DECLARE @Version NVARCHAR(30);
 SET @Version = '7.2';
 SET @VersionDate = '20190128';
 
-SET @Version = '7.3';
-SET @VersionDate = '20190219';
+SELECT @Version = '7.4', @VersionDate = '20190320';
 
 IF(@VersionCheckMode = 1)
 BEGIN
@@ -830,6 +829,11 @@ BEGIN
 		FROM #Headers 
 		WHERE BackupType = 5;                                                  
 	END;
+
+	IF @DiffLastLSN IS NULL
+	BEGIN
+		SET @DiffLastLSN=@FullLastLSN
+	END
 END      
 
 
@@ -967,6 +971,7 @@ IF (@StopAt IS NOT NULL AND @OnlyLogsAfter IS NULL)
 			WHERE BackupFile LIKE N'%.trn'
 			  AND BackupFile LIKE N'%' + @Database + N'%'
 			  AND (@ContinueLogs = 1 OR (@ContinueLogs = 0 AND REPLACE(LEFT(RIGHT(BackupFile, 19), 15),'_','') >= @BackupDateTime) AND REPLACE(LEFT(RIGHT(BackupFile, 19), 15),'_','') <= @StopAt)
+			  AND ((@ContinueLogs = 1 AND REPLACE(LEFT(RIGHT(BackupFile, 19), 15),'_','') <= @StopAt) OR (@ContinueLogs = 0 AND REPLACE(LEFT(RIGHT(BackupFile, 19), 15),'_','') >= @BackupDateTime) AND REPLACE(LEFT(RIGHT(BackupFile, 19), 15),'_','') <= @StopAt)
 			  ORDER BY BackupFile;
 		
 		OPEN BackupFiles;

@@ -39,8 +39,7 @@ AS
 SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-SET @Version = '7.3';
-SET @VersionDate = '20190219';
+SELECT @Version = '7.4', @VersionDate = '20190320';
 SET @OutputType  = UPPER(@OutputType);
 
 IF(@VersionCheckMode = 1)
@@ -3691,16 +3690,12 @@ BEGIN;
                                 index_estimated_impact, t.index_size_summary, create_tsql, more_info
                         FROM
                         (
-                            SELECT  ROW_NUMBER() OVER (ORDER BY mi.is_low, magic_benefit_number DESC) AS rownum,
+                            SELECT  ROW_NUMBER() OVER (ORDER BY magic_benefit_number DESC) AS rownum,
                                 50 AS check_id, 
                                 sz.index_sanity_id,
                                 10 AS Priority,
                                 N'Indexaphobia' AS findings_group,
-                                N'High value missing index' + CASE mi.is_low 
-															  WHEN 0 THEN N' with High Impact' 
-															  WHEN 1 THEN N' with Low Impact'
-															  END
-															  AS finding, 
+                                N'High value missing index' AS finding, 
                                 [database_name] AS [Database Name],
                                 N'http://BrentOzar.com/go/Indexaphobia' AS URL,
                                 mi.[statement] + 
@@ -5064,6 +5059,18 @@ BEGIN;
 										i.[schema_name] AS [Schema Name], 
 										i.[object_name] AS [Object Name], 
 										ISNULL(i.index_name, '''') AS [Index Name],
+                                        CASE 
+						                    WHEN i.is_primary_key = 1 AND i.index_definition <> ''[HEAP]''
+							                    THEN N''-ALTER TABLE '' + QUOTENAME(i.[schema_name]) + N''.'' + QUOTENAME(i.[object_name]) +
+							                         N'' DROP CONSTRAINT '' + QUOTENAME(i.index_name) + N'';''
+						                    WHEN i.is_primary_key = 0 AND i.index_definition <> ''[HEAP]''
+						                        THEN N''--DROP INDEX ''+ QUOTENAME(i.index_name) + N'' ON '' + 
+							                         QUOTENAME(i.[schema_name]) + N''.'' + QUOTENAME(i.[object_name]) + N'';''
+						                ELSE N''''
+						                END AS [Drop TSQL],
+					                    CASE 
+						                    WHEN i.index_definition = ''[HEAP]'' THEN N''''
+					                            ELSE N''--'' + ict.create_tsql END AS [Create TSQL],
 										CAST(i.index_id AS NVARCHAR(10))AS [Index ID],
 										db_schema_object_indexid AS [Details: schema.table.index(indexid)], 
 										CASE    WHEN index_id IN ( 1, 0 ) THEN ''TABLE''

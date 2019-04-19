@@ -4,7 +4,7 @@ GO
 
 ALTER PROCEDURE [dbo].[rpinet_CollectDelete] @Timestamp DATETIME = NULL,
     @OutputServerName NVARCHAR(258) = NULL,
-    @OutputDatabaseName NVARCHAR(258) = '$${databaseName}',
+    @OutputDatabaseName NVARCHAR(258) = '$${OutputDatabaseName}',
     @OutputSchemaName NVARCHAR(258) = 'dbo',
     @Version VARCHAR(30) = NULL OUTPUT,
     @VersionDate DATETIME = NULL OUTPUT,

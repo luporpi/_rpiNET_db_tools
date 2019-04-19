@@ -83,8 +83,9 @@ EXEC sp_executesql @Sql,
     @ergout = @erg OUTPUT,
     @tsout = @Timestamp OUTPUT
 
-SET @TimestampString = REPLACE(CONVERT(VARCHAR(8), @Timestamp, 112) + CONVERT(VARCHAR(8), @Timestamp, 114), ':', '')
+SET @TimestampString = REPLACE(CONVERT(VARCHAR(8), @Timestamp, 112) + CONVERT(VARCHAR(8), @Timestamp, 114), ':', '');
 SET @sql = 'SELECT @ergout = count(name) from sys.objects where type = ''U'' AND name LIKE ''bc_%' + @TimestampString + '''';
+SET @erg = 0;
 
 EXEC sp_executesql @Sql,
     @params,
@@ -94,6 +95,7 @@ SET @output = @output + 'BC: ' + CAST(@erg AS NVARCHAR(5))
 SET @sql = N'SELECT @ergout = (count(name)+6) from (' + N'SELECT ROUTINE_NAME AS name FROM ' + QUOTENAME(@DatabaseName) + 
     N'.information_schema.routines WHERE routine_type in (''procedure'', ''function'') ' + N'UNION ' + N'SELECT name FROM ' + 
     QUOTENAME(@DatabaseName) + N'.sys.triggers) a';
+SET @erg = 0;
 
 EXEC sp_executesql @Sql,
     @params,
@@ -101,6 +103,7 @@ EXEC sp_executesql @Sql,
 
 SET @output = @output + ' of ' + CAST(@erg AS NVARCHAR(5))
 SET @sql = 'SELECT @ergout = count(name) from sys.objects where type = ''U'' AND name LIKE ''bi_%' + @TimestampString + '%''';
+SET @erg = 0;
 
 EXEC sp_executesql @Sql,
     @params,
@@ -108,6 +111,7 @@ EXEC sp_executesql @Sql,
 
 SET @output = @output + '    BI: ' + CAST(@erg AS NVARCHAR(5))
 SET @sql = 'SELECT @ergout = (count(name)*5+5) from ' + QUOTENAME(@DatabaseName) + '.sys.objects where type = ''U''';
+SET @erg = 0;
 
 EXEC sp_executesql @Sql,
     @params,

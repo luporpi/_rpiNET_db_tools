@@ -4,6 +4,9 @@
     <groupId>net.luporpi.dbtools</groupId>
     <artifactId>_rpiNET_db_tools</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <scm>
+        <developerConnection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</developerConnection>
+    </scm>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -211,6 +214,14 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <tagBase>https://github.com/luporpi/_rpiNET_db_tools/releases</tagBase>
+                </configuration>
             </plugin>
 
             <!--

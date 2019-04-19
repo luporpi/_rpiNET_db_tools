@@ -196,6 +196,14 @@
                         </fileSet>
                     </fileSets>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>deploy</goal>
+                            <phase>release</phase>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!--

@@ -5,6 +5,32 @@
 		}
 	],
 	"settings": {
-		"java.configuration.updateBuildConfiguration": "automatic"
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"maven.view": "hierarchical"
+	},
+	"launch": {
+		"configurations": [
+			{
+				"type": "java",
+				"name": "CodeLens (Launch) - App",
+				"request": "launch",
+				"mainClass": "net.luporpi.dbtools.App",
+				"projectName": "_rpiNET_db_tools"
+			},
+			{
+				"type": "java",
+				"name": "Debug (Launch) - Current File",
+				"request": "launch",
+				"mainClass": "${file}",
+				"args": "_rpiNET_db_tools-1.0-SNAPSHOT.jar"
+			},
+			{
+				"type": "java",
+				"name": "Debug (Launch)-App<installer>",
+				"request": "launch",
+				"mainClass": "net.luporpi.dbtools.App",
+				"projectName": "_rpiNET_db_tools"
+			}
+		]
 	}
 }

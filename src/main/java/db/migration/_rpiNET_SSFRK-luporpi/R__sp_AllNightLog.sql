@@ -166,23 +166,25 @@ IF NOT EXISTS (SELECT * FROM sys.configurations WHERE name = 'xp_cmdshell' AND v
 /*
 Make sure Ola Hallengren's scripts are installed in master
 */
+/*
 IF 2 <> (SELECT COUNT(*) FROM master.sys.procedures WHERE name IN('CommandExecute', 'DatabaseBackup'))
 		BEGIN 		
 			RAISERROR('Ola Hallengren''s CommandExecute and DatabaseBackup must be installed in the master database. More info: http://ola.hallengren.com', 0, 1) WITH NOWAIT
 			
 			RETURN;
 		END 
-
+*/
 /*
 Make sure sp_DatabaseRestore is installed in master
 */
+/*
 IF NOT EXISTS (SELECT * FROM master.sys.procedures WHERE name = 'sp_DatabaseRestore')
 		BEGIN 		
 			RAISERROR('sp_DatabaseRestore must be installed in master. To get it: http://FirstResponderKit.org', 0, 1) WITH NOWAIT
 			
 			RETURN;
 		END 
-
+*/
 
 IF (@PollDiskForNewDatabases = 1 OR @Restore = 1) AND OBJECT_ID('msdb.dbo.restore_configuration') IS NOT NULL
     BEGIN
@@ -909,7 +911,7 @@ LogShamer:
 										*/
 
 	                                    IF @encrypt = 'Y'
-										    EXEC master.dbo.DatabaseBackup @Databases = @database, --Database we're working on
+										    EXEC /*master.*/dbo.DatabaseBackup @Databases = @database, --Database we're working on
 																	       @BackupType = 'LOG', --Going for the LOGs
 																	       @Directory = @backup_path, --The path we need to back up to
 																	       @Verify = 'N', --We don't want to verify these, it eats into job time
@@ -922,7 +924,7 @@ LogShamer:
                                                                            @ServerCertificate = @servercertificate;
 
                                         ELSE
-									        EXEC master.dbo.DatabaseBackup @Databases = @database, --Database we're working on
+									        EXEC /*master.*/dbo.DatabaseBackup @Databases = @database, --Database we're working on
 																	        @BackupType = 'LOG', --Going for the LOGs
 																	        @Directory = @backup_path, --The path we need to back up to
 																	        @Verify = 'N', --We don't want to verify these, it eats into job time
@@ -1308,7 +1310,7 @@ IF @Restore = 1
 
 												IF @Debug = 1 RAISERROR('Starting Log only restores', 0, 1) WITH NOWAIT;
 
-												EXEC master.dbo.sp_DatabaseRestore @Database = @database, 
+												EXEC /*master.*/dbo.sp_DatabaseRestore @Database = @database, 
 																				   @BackupPathFull = @restore_path_full,
 																				   @BackupPathLog = @restore_path_log,
 																				   @ContinueLogs = 1,
@@ -1325,7 +1327,7 @@ IF @Restore = 1
 												IF @Debug = 1 RAISERROR('Starting first Full restore from: ', 0, 1) WITH NOWAIT;
 												IF @Debug = 1 RAISERROR(@restore_path_full, 0, 1) WITH NOWAIT;
 
-												EXEC master.dbo.sp_DatabaseRestore @Database = @database, 
+												EXEC /*master.*/dbo.sp_DatabaseRestore @Database = @database, 
 																				   @BackupPathFull = @restore_path_full,
 																				   @BackupPathLog = @restore_path_log,
 																				   @ContinueLogs = 0,

@@ -37,7 +37,7 @@
     <distributionManagement>
         <repository>
             <id>ftp-repository</id>
-            <url>ftp://wp1035779.server-he.de/__ftp/__repository/dbtools</url>
+            <url>ftp://wp1035779.server-he.de/__ftp/__repository</url>
         </repository>
     </distributionManagement>
 
@@ -195,26 +195,6 @@
                     <tagBase>https://github.com/luporpi/_rpiNET_db_tools/releases</tagBase>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>de.jutzig</groupId>
-                <artifactId>github-release-plugin</artifactId>
-                <version>1.2.0</version>
-                <configuration>
-                    <description>See https://dbtools.luporpi.net for details</description>
-                    <releaseName>${release.version}</releaseName>
-                    <tag>${release.tag}</tag>
-                    <deleteRelease>true</deleteRelease>
-                    <fileSets>
-                        <fileSet>
-                            <directory>${project.build.directory}</directory>
-                            <includes>
-                                <include>${project.artifactId}-${project.version}*.zip</include>
-                            </includes>
-                        </fileSet>
-                    </fileSets>
-                </configuration>
-            </plugin>
-
             <!--
                 You can run jacoco in the default profile with:
                 mvn jacoco:prepare-agent test jacoco:report

@@ -215,15 +215,6 @@
                         </fileSet>
                     </fileSets>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>dist-assembly</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>install</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <!--

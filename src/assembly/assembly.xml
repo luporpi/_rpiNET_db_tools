@@ -17,17 +17,23 @@
             <directory>${project.build.directory}/conf</directory>
             <outputDirectory>/conf</outputDirectory>
             <includes>
-                <include>*.*</include>
+                <include>**/*</include>
             </includes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/templates</directory>
             <outputDirectory>/templates</outputDirectory>
             <includes>
-                <include>*.*</include>
+                <include>**/*</include>
             </includes>
         </fileSet>
-
+        <fileSet>
+            <directory>${project.build.directory}/libs/native</directory>
+            <outputDirectory>/libs/native</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
     </fileSets>
     <includeBaseDirectory>true</includeBaseDirectory>
     <dependencySets>

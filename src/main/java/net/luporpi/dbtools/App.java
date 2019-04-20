@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -24,6 +25,23 @@ public final class App {
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
+        // integratedSecurity support
+        // load native libs
+        String nativeLibsPath = "libs/native/x64";
+        if (System.getProperty("os.arch") == "x86") {
+            nativeLibsPath = "libs/native/x86";
+        }
+        System.setProperty("java.library.path", nativeLibsPath);
+
+        Field fieldSysPath;
+        try {
+            fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
+            fieldSysPath.setAccessible(true);
+            fieldSysPath.set(null, null);   
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e1) {
+            e1.printStackTrace();
+        }
+
         Properties props = new Properties();
 
         try (FileInputStream input = new FileInputStream("conf/flyway.conf")) {
@@ -53,7 +71,8 @@ public final class App {
             ex.printStackTrace();
         }
 
-        install = install.replaceAll("\\${2}\\{OutputDatabaseName\\}", props.getProperty("flyway.placeholders.OutputDatabaseName"));
+        install = install.replaceAll("\\${2}\\{OutputDatabaseName\\}",
+                props.getProperty("flyway.placeholders.OutputDatabaseName"));
 
         try {
             PreparedStatement stmt = flyway.getConfiguration().getDataSource().getConnection()
@@ -64,7 +83,8 @@ public final class App {
             e.printStackTrace();
         }
 
-        props.setProperty("flyway.url", props.getProperty("flyway.url").replaceAll("master", props.getProperty("flyway.placeholders.OutputDatabaseName")));
+        props.setProperty("flyway.url", props.getProperty("flyway.url").replaceAll("master",
+                props.getProperty("flyway.placeholders.OutputDatabaseName")));
 
         conf = new FluentConfiguration();
         conf.configuration(props);

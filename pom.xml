@@ -182,7 +182,7 @@
             <plugin>
                 <groupId>de.jutzig</groupId>
                 <artifactId>github-release-plugin</artifactId>
-                <version>1.3.0</version>
+                <version>1.2.0</version>
                 <configuration>
                     <description>${project.artifactId}-${project.version}</description>
                     <releaseName>${project.artifactId}-${project.version}</releaseName>
@@ -191,7 +191,6 @@
                         <fileSet>
                             <directory>${project.build.directory}</directory>
                             <includes>
-                                <include>${project.artifactId}-${project.version}*.tar.gz</include>
                                 <include>${project.artifactId}-${project.version}*.zip</include>
                             </includes>
                         </fileSet>
@@ -200,9 +199,9 @@
                 <executions>
                     <execution>
                         <id>dist-assembly</id>
-                        <phase>release</phase>
+                        <phase>deploy</phase>
                         <goals>
-                            <goal>prepare</goal>
+                            <goal>release</goal>
                         </goals>
                     </execution>
                 </executions>

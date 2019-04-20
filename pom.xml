@@ -2,11 +2,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.luporpi.dbtools</groupId>
     <artifactId>_rpiNET_db_tools</artifactId>
-    <version>3.0.10</version>
+    <version>3.0.11-SNAPSHOT</version>
     <scm>
         <developerConnection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</developerConnection>
         <connection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</connection>
-        <tag>_rpiNET_db_tools-3.0.10</tag>
+        <tag>HEAD</tag>
     </scm>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -199,7 +199,7 @@
                 <executions>
                     <execution>
                         <id>dist-assembly</id>
-                        <phase>release:prepare</phase>
+                        <phase>prepare</phase>
                         <goals>
                             <goal>release</goal>
                         </goals>

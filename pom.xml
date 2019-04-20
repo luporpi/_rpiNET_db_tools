@@ -177,7 +177,7 @@
                 <version>2.5.3</version>
                 <configuration>
                     <tagBase>https://github.com/luporpi/_rpiNET_db_tools/releases</tagBase>
-                    <preparationGoals>clean verify "de.jutzig:github-release-plugin:release"</preparationGoals>
+                    <releaseProfiles>release</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
@@ -200,7 +200,7 @@
                 <executions>
                     <execution>
                         <id>dist-assembly</id>
-                        <phase>deploy</phase>
+                        <phase>release</phase>
                         <goals>
                             <goal>release</goal>
                         </goals>

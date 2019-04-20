@@ -177,7 +177,6 @@
                 <version>2.5.3</version>
                 <configuration>
                     <tagBase>https://github.com/luporpi/_rpiNET_db_tools/releases</tagBase>
-                    <releaseProfiles>release</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
@@ -200,7 +199,7 @@
                 <executions>
                     <execution>
                         <id>dist-assembly</id>
-                        <phase>release</phase>
+                        <phase>release:prepare</phase>
                         <goals>
                             <goal>release</goal>
                         </goals>

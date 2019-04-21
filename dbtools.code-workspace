@@ -10,6 +10,7 @@
 	},
 	"launch": {
 		"configurations": [
+			
 			{
 				"type": "java",
 				"name": "CodeLens (Launch) - App",
@@ -23,6 +24,13 @@
 				"request": "launch",
 				"mainClass": "${file}",
 				"args": "_rpiNET_db_tools-1.0-SNAPSHOT.jar"
+			},
+			{
+				"type": "java",
+				"name": "Debug (Launch) with Arguments Prompt",
+				"request": "launch",
+				"mainClass": "",
+				"args": "${command:SpecifyProgramArgs}"
 			},
 			{
 				"type": "java",

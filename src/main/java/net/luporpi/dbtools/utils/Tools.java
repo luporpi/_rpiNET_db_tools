@@ -21,6 +21,7 @@ public final class Tools {
      */
     public static void loadNativeLibs() throws ToolsException {
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            logger.info("loading native libraries");
             String nativeLibsPath = "libs/native/x64";
             if (System.getProperty("os.arch").toLowerCase() == "x86") {
                 nativeLibsPath = "libs/native/x86";
@@ -78,9 +79,9 @@ public final class Tools {
         return properties;
     }
 
-    public static void initLogger() throws ToolsException {
-        Properties log4jProperties = Tools.loadProperties("conf/log4j.properties");
-        
+    public static void initLogger(String logProperties) throws ToolsException {
+        Properties log4jProperties = Tools.loadProperties(logProperties);
+
         PropertyConfigurator.configure(log4jProperties);
     }
 }

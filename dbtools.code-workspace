@@ -27,10 +27,10 @@
 			},
 			{
 				"type": "java",
-				"name": "Debug (Launch) with Arguments Prompt",
+				"name": "Debug (Launch) with command line",
 				"request": "launch",
 				"mainClass": "",
-				"args": "${command:SpecifyProgramArgs}"
+				"args": "-d conf/test_database.conf -f conf/test_flyway.conf -c -l conf/test_log4j.properties"
 			},
 			{
 				"type": "java",

@@ -1,32 +1,27 @@
 package net.luporpi.dbtools.utils;
 
-import org.junit.Test;
-
-import net.luporpi.dbtools.utils.Tools;
-import net.luporpi.dbtools.utils.exceptions.ToolsException;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Properties;
 
+import org.junit.Test;
+
+import net.luporpi.dbtools.utils.exceptions.ToolsException;
+
 public class ToolsTest {
-    /**
-     * Rigorous Test.
-     */
-    @Test
-    public void testApp() {
-        assertTrue(true);
-    }
 
     @Test
     public void testLoadProperties() {
         Properties connectionProperties = null;
         try {
-            connectionProperties = Tools.loadProperties("conf/test_connection.conf");
+            connectionProperties = Tools.loadProperties("conf/test_database.conf");
         } catch (ToolsException e) {
             e.printStackTrace();
             assertTrue(false);
         }
+
+        connectionProperties.clear();
 
         assertTrue(true);
     }
@@ -37,7 +32,7 @@ public class ToolsTest {
         Properties flywayProperties = null;
 
         try {
-            connectionProperties = Tools.loadProperties("conf/test_connection.conf");
+            connectionProperties = Tools.loadProperties("conf/test_database.conf");
             flywayProperties = Tools.loadProperties("conf/test_flyway.conf");
         } catch (ToolsException e) {
             e.printStackTrace();
@@ -46,8 +41,8 @@ public class ToolsTest {
 
         Tools.mergeProperties(connectionProperties, flywayProperties);
 
-        assertFalse("flyway.url != database.url", flywayProperties.getProperty("flyway.url")
-                .compareTo(connectionProperties.getProperty("database.url")) != 0);
+        assertFalse("flyway.url == database.url", flywayProperties.getProperty("flyway.url")
+                .compareTo(connectionProperties.getProperty("database.url")) == 0);
     }
 
 }

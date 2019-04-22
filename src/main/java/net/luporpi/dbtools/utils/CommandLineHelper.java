@@ -6,31 +6,37 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.LoggerFactory;
 
 import net.luporpi.dbtools.utils.exceptions.ToolsException;
 
 public class CommandLineHelper {
 
-    private final static String CONNECTION = "connection";
-    private final static String FLYWAY = "flyway";
-    private final static String HELP = "help";
-    private final static String INSTALLDB = "db";
+    final static org.slf4j.Logger logger = LoggerFactory.getLogger(CommandLineHelper.class);
+
+    private final static String CRERATEDB = "c";
+    private final static String DATABASE = "d";
+    private final static String FLYWAY = "f";
+    private final static String HELP = "h";
+    private final static String LOG = "l";
 
     private CommandLineParser _parser;
     private CommandLine _cmd;
     private Options _options;
 
-    private String _connection = null;
+    private boolean _createdb = false;
+    private String _database = null;
     private String _flyway = null;
-    private boolean _installdb = false;
+    private String _log = null;
 
     public CommandLineHelper() {
         _options = new Options();
 
-        _options.addOption(CONNECTION, true, "use given connection.properties file");
-        _options.addOption(FLYWAY, true, "use given flyway.properties file");
-        _options.addOption(HELP, false, "print this message");
-        _options.addOption(INSTALLDB, false, "create db");
+        _options.addOption(DATABASE, "database", true, "use given database.conf file (default: conf/database.conf)");
+        _options.addOption(CRERATEDB, "createdb", false, "create db");
+        _options.addOption(FLYWAY, "flyway", true, "use given flyway.conf file (default: conf/flyway.conf)");
+        _options.addOption(LOG, "log", true, "use given log4j.properties file (default: conf/log4j.properties.conf)");
+        _options.addOption(HELP, "help", false, "print this message");
 
         _parser = new DefaultParser();
     }
@@ -38,21 +44,24 @@ public class CommandLineHelper {
     /**
      * @return the _installdb
      */
-    public boolean is_installdb() {
-        return _installdb;
+    public boolean is_createdb() {
+        return _createdb;
     }
 
     /**
      * @param _installdb the _installdb to set
      */
-    public void set_installdb(boolean _installdb) {
-        this._installdb = _installdb;
+    public void set_installdb(boolean _createdb) {
+        this._createdb = _createdb;
     }
 
     /**
      * @return the _flyway
      */
     public String get_flyway() {
+        if (_flyway == null) {
+            _flyway = "conf/flyway.conf";
+        }
         return _flyway;
     }
 
@@ -64,17 +73,37 @@ public class CommandLineHelper {
     }
 
     /**
-     * @return the _connection
+     * @return the _database
      */
-    public String get_connection() {
-        return _connection;
+    public String get_database() {
+        if (_database == null) {
+            _database = "conf/database.conf";
+        }
+        return _database;
     }
 
     /**
      * @param _connection the _connection to set
      */
-    public void set_connection(String _connection) {
-        this._connection = _connection;
+    public void set_connection(String _database) {
+        this._database = _database;
+    }
+
+    /**
+     * @return the _connection
+     */
+    public String get_log() {
+        if (_log == null) {
+            _log = "conf/log4j.properties";
+        }
+        return _log;
+    }
+
+    /**
+     * @param _connection the _connection to set
+     */
+    public void set_log(String _log) {
+        this._log = _log;
     }
 
     public void printHelp() {
@@ -94,8 +123,9 @@ public class CommandLineHelper {
             System.exit(0);
         }
 
-        _connection = _cmd.getOptionValue(CONNECTION);
+        _createdb = _cmd.hasOption(CRERATEDB);
+        _database = _cmd.getOptionValue(DATABASE);
         _flyway = _cmd.getOptionValue(FLYWAY);
-        _installdb = _cmd.hasOption(INSTALLDB);
+        _log = _cmd.getOptionValue(LOG);
     }
 }

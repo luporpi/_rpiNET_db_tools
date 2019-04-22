@@ -25,3 +25,9 @@ buildNumber.properties
 .classpath
 .project
 .vscode/
+
+#
+# logfiles
+#
+
+*.log

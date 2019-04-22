@@ -9,10 +9,13 @@ import org.junit.Test;
 import net.luporpi.dbtools.utils.exceptions.FlywayException;
 import net.luporpi.dbtools.utils.exceptions.ToolsException;
 
+/**
+ * FlywayTest.
+ */
 public class FlywayTest {
 
     /**
-     * test init flyway
+     * test init flyway.
      */
     @Test
     public void testInit() {
@@ -22,14 +25,14 @@ public class FlywayTest {
         try {
             flyway.init();
         } catch (FlywayException e) {
-            assert (false);
+            assertTrue(false);
         }
 
         assertTrue(true);
     }
 
     /**
-     * test init flyway with master database set
+     * test init flyway with master database set.
      */
     @Test
     public void testInitwithMaster() {

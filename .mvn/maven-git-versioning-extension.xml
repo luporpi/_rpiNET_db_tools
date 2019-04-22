@@ -4,8 +4,8 @@
         <versionFormat>${version}</versionFormat>
     </branch>
     <branch>
-         <pattern><![CDATA[release/(?<release>.+)]]></pattern>
-         <versionFormat>${version}</versionFormat>
+         <pattern><![CDATA[release/(?<feature>.+)]]></pattern>
+         <versionFormat>${version.release}</versionFormat>
      </branch>
     <branch>
          <pattern>develop</pattern>

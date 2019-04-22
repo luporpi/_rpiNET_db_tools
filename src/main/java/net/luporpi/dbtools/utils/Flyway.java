@@ -8,30 +8,46 @@ import org.slf4j.LoggerFactory;
 
 import net.luporpi.dbtools.utils.exceptions.FlywayException;
 
+/**
+ * Flyway.
+ */
 public class Flyway {
 
-    final static Logger logger = LoggerFactory.getLogger(Flyway.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Flyway.class);
 
-    private Properties _flywayProperties = null;
-    private org.flywaydb.core.Flyway _flyway = null;
+    private Properties mFlywayProperties;
+    private org.flywaydb.core.Flyway mFlyway;
 
+    /**
+     * Constructor.
+     * 
+     * @param flywayProperties
+     */
     public Flyway(Properties flywayProperties) {
-        _flywayProperties = flywayProperties;
+        mFlywayProperties = flywayProperties;
     }
 
+    /**
+     * Init.
+     * 
+     * @throws FlywayException
+     */
     public void init() throws FlywayException {
-        if (((String) _flywayProperties.getOrDefault("flyway.url", "databaseName=master")).toLowerCase()
+        if (((String) mFlywayProperties.getOrDefault("flyway.url", "databaseName=master")).toLowerCase()
                 .contains("databasename=master")) {
             throw new FlywayException("Don't use master database in flyway.url", null);
         }
 
         FluentConfiguration conf = new FluentConfiguration();
-        conf.configuration(_flywayProperties);
+        conf.configuration(mFlywayProperties);
 
-        _flyway = new org.flywaydb.core.Flyway(conf);
+        mFlyway = new org.flywaydb.core.Flyway(conf);
     }
 
+    /**
+     * Run.
+     */
     public void run() {
-        _flyway.migrate();
+        mFlyway.migrate();
     }
 }

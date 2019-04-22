@@ -11,19 +11,30 @@ import org.slf4j.LoggerFactory;
 
 import net.luporpi.dbtools.utils.exceptions.ToolsException;
 
+/**
+ * Tools.
+ */
 public final class Tools {
 
-    final static Logger logger = LoggerFactory.getLogger(Tools.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Tools.class);
 
     /**
+     * Constructor.
+     */
+    protected Tools() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Load native libraries.
      * 
      * @throws ToolsException
      */
     public static void loadNativeLibs() throws ToolsException {
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
-            logger.info("loading native libraries");
+            LOGGER.info("loading native libraries");
             String nativeLibsPath = "libs/native/x64";
-            if (System.getProperty("os.arch").toLowerCase() == "x86") {
+            if (System.getProperty("os.arch").toLowerCase().compareTo("x86") == 0) {
                 nativeLibsPath = "libs/native/x86";
             }
             System.setProperty("java.library.path", nativeLibsPath);
@@ -33,14 +44,14 @@ public final class Tools {
                 fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
                 fieldSysPath.setAccessible(true);
                 fieldSysPath.set(null, null);
-            } catch (Exception ex) {
+            } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
                 throw new ToolsException("", ex);
             }
         }
     }
 
     /**
-     * merges connection properties into flyway properties
+     * merges connection properties into flyway properties.
      * 
      * @param connectionProperties
      * @param flywayProperties
@@ -61,7 +72,7 @@ public final class Tools {
     }
 
     /**
-     * loads a property file
+     * loads a property file.
      * 
      * @param propertiesFile
      * @return
@@ -79,6 +90,12 @@ public final class Tools {
         return properties;
     }
 
+    /**
+     * Init logger.
+     * 
+     * @param logProperties
+     * @throws ToolsException
+     */
     public static void initLogger(String logProperties) throws ToolsException {
         Properties log4jProperties = Tools.loadProperties(logProperties);
 

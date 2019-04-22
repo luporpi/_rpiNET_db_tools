@@ -1,9 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.luporpi.dbtools</groupId>
     <artifactId>_rpiNET_db_tools</artifactId>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>3.0.3-SNAPSHOT</version>
     <scm>
         <developerConnection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</developerConnection>
         <connection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</connection>
@@ -80,16 +79,11 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.10</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>com.github.ngeor</groupId>
-                            <artifactId>checkstyle-rules</artifactId>
-                            <version>1.1.0</version>
+                            <version>8.19</version>
                         </dependency>
                     </dependencies>
                     <configuration>
-                        <configLocation>com/github/ngeor/checkstyle.xml</configLocation>
+                        <configLocation>checkstyle.xml</configLocation>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
                 </plugin>
@@ -113,6 +107,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -262,7 +265,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <configLocation>com/github/ngeor/checkstyle.xml</configLocation>
+                    <configLocation>checkstyle.xml</configLocation>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
             </plugin>

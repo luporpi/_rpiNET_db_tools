@@ -10,122 +10,137 @@ import org.slf4j.LoggerFactory;
 
 import net.luporpi.dbtools.utils.exceptions.ToolsException;
 
+/**
+ * Helper for command line handling.
+ */
 public class CommandLineHelper {
 
-    final static org.slf4j.Logger logger = LoggerFactory.getLogger(CommandLineHelper.class);
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CommandLineHelper.class);
 
-    private final static String CRERATEDB = "c";
-    private final static String DATABASE = "d";
-    private final static String FLYWAY = "f";
-    private final static String HELP = "h";
-    private final static String LOG = "l";
+    private static final String CRERATEDB = "c";
+    private static final String DATABASE = "d";
+    private static final String FLYWAY = "f";
+    private static final String HELP = "h";
+    private static final String LOG = "l";
 
-    private CommandLineParser _parser;
-    private CommandLine _cmd;
-    private Options _options;
+    private CommandLineParser mParser;
+    private CommandLine mCmd;
+    private Options mOptions;
 
-    private boolean _createdb = false;
-    private String _database = null;
-    private String _flyway = null;
-    private String _log = null;
+    private boolean mCreateDb;
+    private String mDatabase;
+    private String mFlyway;
+    private String mLog;
 
+    /**
+     * Contructor.
+     */
     public CommandLineHelper() {
-        _options = new Options();
+        mOptions = new Options();
 
-        _options.addOption(DATABASE, "database", true, "use given database.conf file (default: conf/database.conf)");
-        _options.addOption(CRERATEDB, "createdb", false, "create db");
-        _options.addOption(FLYWAY, "flyway", true, "use given flyway.conf file (default: conf/flyway.conf)");
-        _options.addOption(LOG, "log", true, "use given log4j.properties file (default: conf/log4j.properties.conf)");
-        _options.addOption(HELP, "help", false, "print this message");
+        mOptions.addOption(DATABASE, "database", true, "use given database.conf file (default: conf/database.conf)");
+        mOptions.addOption(CRERATEDB, "createdb", false, "create db");
+        mOptions.addOption(FLYWAY, "flyway", true, "use given flyway.conf file (default: conf/flyway.conf)");
+        mOptions.addOption(LOG, "log", true, "use given log4j.properties file (default: conf/log4j.properties.conf)");
+        mOptions.addOption(HELP, "help", false, "print this message");
 
-        _parser = new DefaultParser();
+        mParser = new DefaultParser();
     }
 
     /**
-     * @return the _installdb
+     * @return the createDb
      */
-    public boolean is_createdb() {
-        return _createdb;
+    public boolean isCreateDb() {
+        return mCreateDb;
     }
 
     /**
-     * @param _installdb the _installdb to set
+     * @param createdb the createdb to set
      */
-    public void set_installdb(boolean _createdb) {
-        this._createdb = _createdb;
+    public void setCreateDb(boolean createdb) {
+        this.mCreateDb = createdb;
     }
 
     /**
-     * @return the _flyway
+     * @return the flyway
      */
-    public String get_flyway() {
-        if (_flyway == null) {
-            _flyway = "conf/flyway.conf";
+    public String getFlyway() {
+        if (mFlyway == null) {
+            mFlyway = "conf/flyway.conf";
         }
-        return _flyway;
+        return mFlyway;
     }
 
     /**
-     * @param _flyway the _flyway to set
+     * @param flyway the flyway to set
      */
-    public void set_flyway(String _flyway) {
-        this._flyway = _flyway;
+    public void setFlyway(String flyway) {
+        this.mFlyway = flyway;
     }
 
     /**
-     * @return the _database
+     * @return the database
      */
-    public String get_database() {
-        if (_database == null) {
-            _database = "conf/database.conf";
+    public String getDatabase() {
+        if (mDatabase == null) {
+            mDatabase = "conf/database.conf";
         }
-        return _database;
+        return mDatabase;
     }
 
     /**
-     * @param _connection the _connection to set
+     * @param database the database to set
      */
-    public void set_connection(String _database) {
-        this._database = _database;
+    public void set_connection(String database) {
+        this.mDatabase = database;
     }
 
     /**
-     * @return the _connection
+     * @return the log
      */
-    public String get_log() {
-        if (_log == null) {
-            _log = "conf/log4j.properties";
+    public String getLog() {
+        if (mLog == null) {
+            mLog = "conf/log4j.properties";
         }
-        return _log;
+        return mLog;
     }
 
     /**
-     * @param _connection the _connection to set
+     * @param log the log to set
      */
-    public void set_log(String _log) {
-        this._log = _log;
+    public void setLog(String log) {
+        this.mLog = log;
     }
 
+    /**
+     * print help.
+     */
     public void printHelp() {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("_rpinet_dbtools", _options);
+        formatter.printHelp("_rpinet_dbtools", mOptions);
     }
 
+    /**
+     * Parse the command line.
+     * 
+     * @param args
+     * @throws ToolsException
+     */
     public void parse(String[] args) throws ToolsException {
         try {
-            _cmd = _parser.parse(_options, args);
+            mCmd = mParser.parse(mOptions, args);
         } catch (ParseException ex) {
             throw new ToolsException("", ex);
         }
 
-        if (_cmd.hasOption(HELP)) {
+        if (mCmd.hasOption(HELP)) {
             printHelp();
             System.exit(0);
         }
 
-        _createdb = _cmd.hasOption(CRERATEDB);
-        _database = _cmd.getOptionValue(DATABASE);
-        _flyway = _cmd.getOptionValue(FLYWAY);
-        _log = _cmd.getOptionValue(LOG);
+        mCreateDb = mCmd.hasOption(CRERATEDB);
+        mDatabase = mCmd.getOptionValue(DATABASE);
+        mFlyway = mCmd.getOptionValue(FLYWAY);
+        mLog = mCmd.getOptionValue(LOG);
     }
 }

@@ -15,32 +15,49 @@ import org.slf4j.LoggerFactory;
 
 import net.luporpi.dbtools.utils.exceptions.DatabaseException;
 
+/**
+ * Database related stuff.
+ */
 public class Database {
 
-    final static Logger logger = LoggerFactory.getLogger(Database.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
 
-    private Connection _conn = null;
-    private Properties _connectionProperties = null;
+    private Connection mConnection;
+    private Properties mConnectionProperties;
 
+    /**
+     * Constructor.
+     * 
+     * @param connectionProperties
+     */
     public Database(Properties connectionProperties) {
-        _connectionProperties = connectionProperties;
+        mConnectionProperties = connectionProperties;
     }
 
-    public void Init() throws DatabaseException {
+    /**
+     * Init.
+     * 
+     * @throws DatabaseException
+     */
+    public void init() throws DatabaseException {
 
         Properties connectionProperties = new Properties();
-        connectionProperties.put("user", _connectionProperties.getProperty("database.user"));
-        connectionProperties.put("password", _connectionProperties.getProperty("database.password"));
+        connectionProperties.put("user", mConnectionProperties.getProperty("database.user"));
+        connectionProperties.put("password", mConnectionProperties.getProperty("database.password"));
 
         try {
-            String dataseUrl = _connectionProperties.getProperty("database.url");
-            _conn = DriverManager.getConnection(dataseUrl, connectionProperties);
-            logger.info("Connected to database: " + dataseUrl);
+            String dataseUrl = mConnectionProperties.getProperty("database.url");
+            mConnection = DriverManager.getConnection(dataseUrl, connectionProperties);
+            LOGGER.info("Connected to database: " + dataseUrl);
         } catch (SQLException ex) {
             throw new DatabaseException("unable to connect to database", ex);
         }
     }
 
+    /**
+     * create or updates collection database.
+     * @throws DatabaseException
+     */
     public void createDatabase() throws DatabaseException {
         String install = null;
 
@@ -58,18 +75,18 @@ public class Database {
             throw new DatabaseException("unable to load T__rpinet_CollectInstall.sql", ex);
         }
 
-        String outputdatabase = _connectionProperties.getProperty("database.outputdatabase");
+        String outputdatabase = mConnectionProperties.getProperty("database.outputdatabase");
 
         install = install.replaceAll("\\${2}\\{OutputDatabaseName\\}", outputdatabase);
 
         try {
-            PreparedStatement stmt = _conn.prepareStatement(install);
+            PreparedStatement stmt = mConnection.prepareStatement(install);
 
             stmt.execute();
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        logger.info("created database: " + outputdatabase);
+        LOGGER.info("created database: " + outputdatabase);
     }
 }

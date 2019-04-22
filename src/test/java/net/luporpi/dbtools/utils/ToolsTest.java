@@ -9,6 +9,9 @@ import org.junit.Test;
 
 import net.luporpi.dbtools.utils.exceptions.ToolsException;
 
+/**
+ * ToolsTest.
+ */
 public class ToolsTest {
 
     @Test

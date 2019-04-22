@@ -15,13 +15,13 @@ import net.luporpi.dbtools.utils.exceptions.MainException;
 import net.luporpi.dbtools.utils.exceptions.ToolsException;
 
 /**
- * main App
+ * Main App.
  */
 public final class App {
 
-    final static Logger logger = LoggerFactory.getLogger(App.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
-    private CommandLineHelper _cmd = null;
+    private CommandLineHelper mCmd;
 
     private App() {
 
@@ -30,18 +30,18 @@ public final class App {
     private void init(String[] args) {
         try {
             // parse command line arguments
-            _cmd = new CommandLineHelper();
+            mCmd = new CommandLineHelper();
             try {
-                _cmd.parse(args);
+                mCmd.parse(args);
             } catch (ToolsException ex) {
                 throw new MainException("Error parsing command line", ex);
             }
 
             // init logger
             try {
-                String logConf = _cmd.get_log();
+                String logConf = mCmd.getLog();
                 Tools.initLogger(logConf);
-                logger.info("Log configuration: " + logConf);
+                LOGGER.info("Log configuration: " + logConf);
             } catch (ToolsException ex) {
                 throw new MainException("Logging could not be initialized", ex);
             }
@@ -50,10 +50,10 @@ public final class App {
             try {
                 Tools.loadNativeLibs();
             } catch (ToolsException ex) {
-                logger.warn("Unable to laod native libraries", ex);
+                LOGGER.warn("Unable to laod native libraries", ex);
             }
         } catch (MainException ex) {
-            _cmd.printHelp();
+            mCmd.printHelp();
             ex.printStackTrace();
             System.exit(1);
         }
@@ -64,10 +64,10 @@ public final class App {
         Properties databaseProperties = null;
         Properties flywayProperties = null;
 
-        String databaseConf = _cmd.get_database();
-        logger.info("Database configuration: " + databaseConf);
-        String flywayConf = _cmd.get_flyway();
-        logger.info("Flyway configuration: " + flywayConf);
+        String databaseConf = mCmd.getDatabase();
+        LOGGER.info("Database configuration: " + databaseConf);
+        String flywayConf = mCmd.getFlyway();
+        LOGGER.info("Flyway configuration: " + flywayConf);
 
         try {
             databaseProperties = Tools.loadProperties(databaseConf);
@@ -80,11 +80,11 @@ public final class App {
         // load properties - END
 
         // create database
-        if (_cmd.is_createdb()) {
-            logger.info("Create database");
+        if (mCmd.isCreateDb()) {
+            LOGGER.info("Create database");
             Database database = new Database(databaseProperties);
             try {
-                database.Init();
+                database.init();
                 database.createDatabase();
             } catch (DatabaseException ex) {
                 throw new MainException("Unable to create database", ex);
@@ -103,6 +103,11 @@ public final class App {
         // flyway - END
     }
 
+    /**
+     * main method.
+     * 
+     * @param args
+     */
     public static void main(String[] args) {
         try {
             App app = new App();
@@ -111,7 +116,7 @@ public final class App {
             app.run();
 
         } catch (MainException ex) {
-            logger.error("", ex);
+            LOGGER.error("", ex);
         }
     }
 }

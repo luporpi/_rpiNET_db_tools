@@ -38,11 +38,15 @@ public class CommandLineHelper {
     public CommandLineHelper() {
         mOptions = new Options();
 
-        mOptions.addOption(DATABASE, "database", true, "use given database.conf file (default: conf/database.conf)");
-        mOptions.addOption(CRERATEDB, "createdb", false, "create db");
-        mOptions.addOption(FLYWAY, "flyway", true, "use given flyway.conf file (default: conf/flyway.conf)");
-        mOptions.addOption(LOG, "log", true, "use given log4j.properties file (default: conf/log4j.properties.conf)");
-        mOptions.addOption(HELP, "help", false, "print this message");
+        mOptions.addOption(CRERATEDB, "createdb", false,
+                "If set the output database for collection data will be created.");
+        mOptions.addOption(DATABASE, "database", true,
+                "Use an alternative database configuration file instead of the default conf/database.conf");
+        mOptions.addOption(FLYWAY, "flyway", true,
+                "Use an alternative flyway configuration file instead of the default conf/flyway.conf");
+        mOptions.addOption(HELP, "help", false, "Print help for command-line parameters.");
+        mOptions.addOption(LOG, "log", true,
+                "Use an alternative log4j configuration file instead of the default conf/log4j.properties");
 
         mParser = new DefaultParser();
     }
@@ -117,7 +121,8 @@ public class CommandLineHelper {
      */
     public void printHelp() {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("_rpinet_dbtools", mOptions);
+        String usage = "_rpiNET_dbtools\n\n" + "java -jar _rpiNET_dbtools-<version>.jar [options]\n\n" + "";
+        formatter.printHelp(usage, mOptions);
     }
 
     /**

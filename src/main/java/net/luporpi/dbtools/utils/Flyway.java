@@ -3,8 +3,8 @@ package net.luporpi.dbtools.utils;
 import java.util.Properties;
 
 import org.flywaydb.core.api.configuration.FluentConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 
 import net.luporpi.dbtools.utils.exceptions.FlywayException;
 
@@ -13,7 +13,7 @@ import net.luporpi.dbtools.utils.exceptions.FlywayException;
  */
 public class Flyway {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Flyway.class);
+    //private static final Logger LOGGER = LoggerFactory.getLogger(Flyway.class);
 
     private Properties mFlywayProperties;
     private org.flywaydb.core.Flyway mFlyway;

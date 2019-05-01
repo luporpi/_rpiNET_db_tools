@@ -82,6 +82,7 @@ BEGIN
         @CurrentDate DATETIME,
         @TimestampString NVARCHAR(50),
         @Reanalyze BIT = 0,
+        @HideSummary BIT = 0,
         @Id INT = 0,
         @Killed BIT = 0;
 
@@ -89,6 +90,9 @@ BEGIN
     BEGIN
         SET @Timestamp = GETDATE();
     END;
+
+    -- @minimize resultset output
+    SET @HideSummary = 1;
 
     EXEC rpinet_CollectLog @Id = @Id OUTPUT,
         @DatabaseName = DatabaseName,
@@ -119,10 +123,10 @@ BEGIN
             SET @Reanalyze = 1
         SET @sql = N'sp_BlitzCache ' + N'@OutputDatabaseName=@OutputDatabaseName,' + N'@OutputSchemaName=@OutputSchemaName,' + 
             N'@OutputTableName=@OutputTableName,' + N'@Databasename=@Databasename,' + N'@Top=@Top,' + 
-            N'@SortOrder=@SortOrder,' + N'@Reanalyze=@Reanalyze';
+            N'@SortOrder=@SortOrder,' + N'@Reanalyze=@Reanalyze,' + N'@HideSummary=@HideSummary';
         SET @params = N'@OutputDatabaseName NVARCHAR(258),' + N'@OutputSchemaName NVARCHAR(258),' + 
             N'@OutputTableName NVARCHAR(258),' + N'@Databasename NVARCHAR(128),' + N'@Top INT,' + N'@SortOrder VARCHAR(50),' + 
-            N'@Reanalyze BIT';
+            N'@Reanalyze BIT,' + N'@HideSummary BIT';
 
         SELECT @OutputTableName = 'bc_base__' + REPLACE(LOWER(sort), ' ', '_') + '__' + @TimestampString,
             @SortOrder = sort
@@ -137,7 +141,8 @@ BEGIN
             @Databasename = @Databasename,
             @Top = @Top,
             @SortOrder = @SortOrder,
-            @Reanalyze = @Reanalyze
+            @Reanalyze = @Reanalyze,
+            @HideSummary = @HideSummary
 
         IF @erg <> 0
             RAISERROR (
@@ -198,10 +203,10 @@ BEGIN
         SET @counter = @counter + 1;
         SET @sql = N'sp_BlitzCache ' + N'@OutputDatabaseName=@OutputDatabaseName,' + N'@OutputSchemaName=@OutputSchemaName,' + 
             N'@OutputTableName=@OutputTableName,' + N'@Databasename=@Databasename,' + N'@Top=@Top,' + 
-            N'@StoredProcName=@StoredProcName';
+            N'@StoredProcName=@StoredProcName,' + N'@HideSummary=@HideSummary';
         SET @params = N'@OutputDatabaseName NVARCHAR(258),' + N'@OutputSchemaName NVARCHAR(258),' + 
             N'@OutputTableName NVARCHAR(258),' + N'@Databasename NVARCHAR(128),' + N'@Top INT,' + 
-            N'@StoredProcName NVARCHAR(128)';
+            N'@StoredProcName NVARCHAR(128),' + N'@HideSummary BIT';
 
         SELECT @OutputTableName = N'bc_spec__' + REPLACE(LOWER(name), N' ', N'_') + N'__' + @TimestampString,
             @StoredProcName = name
@@ -228,7 +233,8 @@ BEGIN
             @OutputTableName = @OutputTableName,
             @Databasename = @Databasename,
             @Top = @Top,
-            @StoredProcName = @StoredProcName
+            @StoredProcName = @StoredProcName,
+            @HideSummary = @HideSummary
 
         IF @erg <> 0
             RAISERROR (

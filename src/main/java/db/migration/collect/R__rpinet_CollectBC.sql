@@ -95,7 +95,7 @@ BEGIN
     SET @HideSummary = 1;
 
     EXEC rpinet_CollectLog @Id = @Id OUTPUT,
-        @DatabaseName = DatabaseName,
+        @DatabaseName = @DatabaseName,
         @StartDate = @Timestamp,
         @Killed = @Killed OUTPUT;
 
@@ -261,7 +261,7 @@ BEGIN
     finish:
 
     EXEC rpinet_CollectLog @Id = @Id,
-        @DatabaseName = DatabaseName,
+        @DatabaseName = @DatabaseName,
         @EndDate = @Timestamp,
         @Killed = @Killed;
 END;

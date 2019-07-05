@@ -36,7 +36,7 @@ AS
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	
 
-	SELECT @Version = '7.5', @VersionDate = '20190427';
+	SELECT @Version = '7.6', @VersionDate = '20190702';
 	SET @OutputType = UPPER(@OutputType);
 
     IF(@VersionCheckMode = 1)
@@ -78,7 +78,7 @@ AS
 	@CheckProcedureCache		1=top 20-50 resource-intensive cache plans and analyze them for common performance issues.
 	@OutputProcedureCache		1=output the top 20-50 resource-intensive plans even if they did not trigger an alarm
 	@CheckProcedureCacheFilter	''CPU'' | ''Reads'' | ''Duration'' | ''ExecCount''
-	@OutputType					''TABLE''=table | ''COUNT''=row with number found | ''MARKDOWN''=bulleted list | ''SCHEMA''=version and field list | ''NONE'' = none
+	@OutputType					''TABLE''=table | ''COUNT''=row with number found | ''MARKDOWN''=bulleted list | ''SCHEMA''=version and field list | ''XML'' =table output as XML | ''NONE'' = none
 	@IgnorePrioritiesBelow		50=ignore priorities below 50
 	@IgnorePrioritiesAbove		50=ignore priorities above 50
 	For the rest of the parameters, see https://www.BrentOzar.com/blitz/documentation for details.
@@ -2352,7 +2352,7 @@ AS
 											200 AS Priority ,
 											'Monitoring' AS FindingsGroup ,
 											'Alerts Disabled' AS Finding ,
-											'https://www.BrentOzar.com/go/alerts/' AS URL ,
+											'https://BrentOzar.com/go/alert' AS URL ,
 											( 'The following Alert is disabled, please review and enable if desired: '
 											  + name ) AS Details
 									FROM    msdb.dbo.sysalerts
@@ -5651,9 +5651,9 @@ IF @ProductVersionMajor >= 10
 										DB_NAME(s.database_id)
 										+ '' has ''
 										+ CONVERT(NVARCHAR(20), COUNT_BIG(*))
-										+ '' open implicit transactions ''
-										+ '' with an oldest begin time of ''
-										+ CONVERT(NVARCHAR(30), MIN(tat.transaction_begin_time)) AS details
+										+ '' open implicit transactions with an oldest begin time of ''
+										+ CONVERT(NVARCHAR(30), MIN(tat.transaction_begin_time)) 
+										+ '' Run sp_BlitzWho and check the is_implicit_transaction column to see the culprits.'' AS details
 								FROM    sys.dm_tran_active_transactions AS tat
 								LEFT JOIN sys.dm_tran_session_transactions AS tst
 								ON tst.transaction_id = tat.transaction_id
@@ -8872,6 +8872,25 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 							  LEFT OUTER JOIN Results rPrior ON r.rownum = rPrior.rownum + 1
 							  LEFT OUTER JOIN Results rNext ON r.rownum = rNext.rownum - 1
 							ORDER BY r.rownum FOR XML PATH(N'');
+						END;
+                    ELSE IF @OutputType = 'XML'
+                        BEGIN
+							/* --TOURSTOP05-- */
+							SELECT  [Priority] ,
+									[FindingsGroup] ,
+									[Finding] ,
+									[DatabaseName] ,
+									[URL] ,
+									[Details] ,
+									[QueryPlanFiltered] ,
+									CheckID
+							FROM    #BlitzResults
+							ORDER BY Priority ,
+									FindingsGroup ,
+									Finding ,
+									DatabaseName ,
+									Details
+                            FOR XML PATH('Result'), ROOT('sp_Blitz_Output');
 						END;
 					ELSE IF @OutputType <> 'NONE'
 						BEGIN

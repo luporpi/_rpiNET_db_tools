@@ -17,8 +17,8 @@ BEGIN
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-    SELECT @Version = '3.1.0',
-        @VersionDate = '20190501';
+    SELECT @Version = '3.1.1',
+        @VersionDate = '20190706';
 
     IF (@VersionCheckMode = 1)
     BEGIN
@@ -92,7 +92,7 @@ BEGIN
     END;
 
     EXEC rpinet_CollectLog @Id = @Id OUTPUT,
-        @DatabaseName = DatabaseName,
+        @DatabaseName = @DatabaseName,
         @StartDate = @Timestamp,
         @Killed = @Killed OUTPUT;
 
@@ -275,7 +275,7 @@ BEGIN
     SET @Timestamp = GETDATE();
 
     EXEC rpinet_CollectLog @Id = @Id,
-        @DatabaseName = DatabaseName,
+        @DatabaseName = @DatabaseName,
         @EndDate = @Timestamp,
         @Killed = @Killed;
 END;

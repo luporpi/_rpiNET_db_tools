@@ -57,18 +57,18 @@ public final class Tools {
      * @param flywayProperties
      */
     public static void mergeProperties(Properties connectionProperties, Properties flywayProperties) {
-        flywayProperties.setProperty("flyway.url",
-                (String) flywayProperties.getOrDefault("flyway.url", connectionProperties.getProperty("database.url")));
+        flywayProperties.setProperty("flyway.url", (String) flywayProperties.getOrDefault("flyway.url",
+                connectionProperties.getOrDefault("database.url", "")));
         flywayProperties.setProperty("flyway.user", (String) flywayProperties.getOrDefault("flyway.user",
-                connectionProperties.getProperty("database.user")));
+                connectionProperties.getOrDefault("database.user", "")));
         flywayProperties.setProperty("flyway.password", (String) flywayProperties.getOrDefault("flyway.password",
-                connectionProperties.getProperty("database.password")));
+                connectionProperties.getOrDefault("database.password", "")));
         flywayProperties.setProperty("flyway.placeholders.DatabaseName",
                 (String) flywayProperties.getOrDefault("flyway.placeholders.DatabaseName",
-                        connectionProperties.getProperty("database.database")));
+                        connectionProperties.getOrDefault("database.database", "")));
         flywayProperties.setProperty("flyway.placeholders.OutputDatabaseName",
                 (String) flywayProperties.getOrDefault("flyway.placeholders.OutputDatabaseName",
-                        connectionProperties.getProperty("database.outputdatabase")));
+                        connectionProperties.getOrDefault("database.outputdatabase", "")));
     }
 
     /**

@@ -16,13 +16,15 @@ import net.luporpi.dbtools.utils.exceptions.ToolsException;
  */
 public class CommandLineHelper {
 
-    //private static final Logger LOGGER = LoggerFactory.getLogger(CommandLineHelper.class);
+    // private static final Logger LOGGER =
+    // LoggerFactory.getLogger(CommandLineHelper.class);
 
     private static final String CRERATEDB = "c";
     private static final String DATABASE = "d";
     private static final String FLYWAY = "f";
     private static final String HELP = "h";
     private static final String LOG = "l";
+    private static final String SQL2016 = "2016";
 
     private CommandLineParser mParser;
     private CommandLine mCmd;
@@ -32,6 +34,7 @@ public class CommandLineHelper {
     private String mDatabase;
     private String mFlyway;
     private String mLog;
+    private boolean mSQL2016;
 
     /**
      * Contructor.
@@ -48,6 +51,7 @@ public class CommandLineHelper {
         mOptions.addOption(HELP, "help", false, "Print help for command-line parameters.");
         mOptions.addOption(LOG, "log", true,
                 "Use an alternative log4j configuration file instead of the default conf/log4j.properties");
+        mOptions.addOption(SQL2016, "sql2016", false, "Skip scripts that require SQL Server 2016 or greater");
 
         mParser = new DefaultParser();
     }
@@ -118,6 +122,20 @@ public class CommandLineHelper {
     }
 
     /**
+     * @return the sql2016
+     */
+    public boolean isSQL2016() {
+        return mSQL2016;
+    }
+
+    /**
+     * @param sql2016 the sql2016 to set
+     */
+    public void setSQL2016(boolean sql2016) {
+        this.mSQL2016 = sql2016;
+    }
+
+    /**
      * print help.
      */
     public void printHelp() {
@@ -148,5 +166,6 @@ public class CommandLineHelper {
         mDatabase = mCmd.getOptionValue(DATABASE);
         mFlyway = mCmd.getOptionValue(FLYWAY);
         mLog = mCmd.getOptionValue(LOG);
+        mSQL2016 = mCmd.hasOption(SQL2016);
     }
 }

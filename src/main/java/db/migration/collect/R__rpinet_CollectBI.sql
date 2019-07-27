@@ -110,8 +110,8 @@ BEGIN
 
     /* Count the total number of partitions */
     SET @dsql = N'SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-			SELECT @RowcountOUT = SUM(1) FROM ' + QUOTENAME(
-            @DatabaseName) + '.sys.partitions WHERE partition_number > 1 OPTION    ( RECOMPILE );';
+            SELECT @RowcountOUT = SUM(1) FROM ' + 
+        QUOTENAME(@DatabaseName) + '.sys.partitions WHERE partition_number > 1 OPTION    ( RECOMPILE );';
 
     EXEC sp_executesql @dsql,
         N'@RowcountOUT BIGINT OUTPUT',

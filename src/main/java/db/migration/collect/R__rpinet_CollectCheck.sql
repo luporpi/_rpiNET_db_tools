@@ -110,7 +110,20 @@ EXEC sp_executesql @Sql,
     @ergout = @erg OUTPUT
 
 SET @output = @output + '    BI: ' + CAST(@erg AS NVARCHAR(5))
-SET @sql = 'SELECT @ergout = (count(name)*5+5) from ' + QUOTENAME(@DatabaseName) + '.sys.objects where type = ''U''';
+
+IF EXISTS (
+        SELECT *
+        FROM sys.all_objects
+        WHERE name = 'dm_db_stats_histogram'
+        )
+BEGIN
+    SET @sql = 'SELECT @ergout = (count(name)*5+5) from ' + QUOTENAME(@DatabaseName) + '.sys.objects where type = ''U''';
+END
+ELSE
+BEGIN
+    SET @sql = 'SELECT @ergout = (count(name)*4+5) from ' + QUOTENAME(@DatabaseName) + '.sys.objects where type = ''U''';
+END;
+
 SET @erg = 0;
 
 EXEC sp_executesql @Sql,

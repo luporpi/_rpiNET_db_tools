@@ -40,7 +40,7 @@ AS
 SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-SELECT @Version = '7.6', @VersionDate = '20190702';
+SELECT @Version = '7.7', @VersionDate = '20190826';
 SET @OutputType  = UPPER(@OutputType);
 
 IF(@VersionCheckMode = 1)
@@ -130,7 +130,7 @@ SELECT @SQLServerProductVersion = CAST(SERVERPROPERTY('ProductVersion') AS NVARC
 SELECT @SQLServerEdition =CAST(SERVERPROPERTY('EngineEdition') AS INT); /* We default to online index creates where EngineEdition=3*/
 SET @FilterMB=250;
 SELECT @ScriptVersionName = 'sp_BlitzIndex(TM) v' + @Version + ' - ' + DATENAME(MM, @VersionDate) + ' ' + RIGHT('0'+DATENAME(DD, @VersionDate),2) + ', ' + DATENAME(YY, @VersionDate);
-SET @IgnoreDatabases = LTRIM(RTRIM(@IgnoreDatabases));
+SET @IgnoreDatabases = REPLACE(REPLACE(LTRIM(RTRIM(@IgnoreDatabases)), CHAR(10), ''), CHAR(13), '');
 
 RAISERROR(N'Starting run. %s', 0,1, @ScriptVersionName) WITH NOWAIT;
 																					
@@ -761,7 +761,7 @@ IF @GetAllDatabases = 1
                         SET @DatabaseToIgnore = SUBSTRING(@IgnoreDatabases, 0, PATINDEX('%,%',@IgnoreDatabases)) ;
                         
                         INSERT INTO #Ignore_Databases (DatabaseName, Reason)
-                        SELECT @DatabaseToIgnore, 'Specified in the @IgnoreDatabases parameter'
+                        SELECT LTRIM(RTRIM(@DatabaseToIgnore)), 'Specified in the @IgnoreDatabases parameter'
                         OPTION (RECOMPILE) ;
                         
                         SET @IgnoreDatabases = SUBSTRING(@IgnoreDatabases, LEN(@DatabaseToIgnore + ',') + 1, LEN(@IgnoreDatabases)) ;
@@ -772,7 +772,7 @@ IF @GetAllDatabases = 1
                         SET @IgnoreDatabases = NULL ;
 
                         INSERT INTO #Ignore_Databases (DatabaseName, Reason)
-                        SELECT @DatabaseToIgnore, 'Specified in the @IgnoreDatabases parameter'
+                        SELECT LTRIM(RTRIM(@DatabaseToIgnore)), 'Specified in the @IgnoreDatabases parameter'
                         OPTION (RECOMPILE) ;
                     END;
             END;
@@ -2295,7 +2295,7 @@ BEGIN
             )
             SELECT 
                     db_schema_object_indexid AS [Details: db_schema.table.index(indexid)], 
-                    index_definition AS [Definition: [Property]] ColumnName {datatype maxbytes}], 
+                    LEFT(index_definition,4000) AS [Definition: [Property]] ColumnName {datatype maxbytes}],
                     secret_columns AS [Secret Columns],
                     fill_factor AS [Fillfactor],
                     index_usage_summary AS [Usage Stats], 
@@ -4615,7 +4615,7 @@ BEGIN;
 						+ br.finding AS [Finding], 
 					br.[database_name] AS [Database Name],
 					br.details AS [Details: schema.table.index(indexid)], 
-					br.index_definition AS [Definition: [Property]] ColumnName {datatype maxbytes}], 
+					LEFT(br.index_definition,4000) AS [Definition: [Property]] ColumnName {datatype maxbytes}],
 					ISNULL(br.secret_columns,'''') AS [Secret Columns],          
 					br.index_usage_summary AS [Usage], 
 					br.index_size_summary AS [Size],
@@ -4677,7 +4677,7 @@ BEGIN;
     						+ br.finding AS [Finding], 
     					br.[database_name] AS [Database Name],
     					br.details AS [Details: schema.table.index(indexid)], 
-    					br.index_definition AS [Definition: [Property]] ColumnName {datatype maxbytes}], 
+    					LEFT(br.index_definition,4000) AS [Definition: [Property]] ColumnName {datatype maxbytes}],
     					ISNULL(br.secret_columns,'''') AS [Secret Columns],          
     					br.index_usage_summary AS [Usage], 
     					br.index_size_summary AS [Size],
@@ -5164,7 +5164,7 @@ BEGIN;
 										CASE    WHEN index_id IN ( 1, 0 ) THEN ''TABLE''
 											ELSE ''NonClustered''
 											END AS [Object Type], 
-										index_definition AS [Definition: [Property]] ColumnName {datatype maxbytes}],
+										LEFT(index_definition,4000) AS [Definition: [Property]] ColumnName {datatype maxbytes}],
 										ISNULL(LTRIM(key_column_names_with_sort_order), '''') AS [Key Column Names With Sort],
 										ISNULL(count_key_columns, 0) AS [Count Key Columns],
 										ISNULL(include_column_names, '''') AS [Include Column Names], 

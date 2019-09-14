@@ -1,8 +1,9 @@
 package net.luporpi.dbtools.utils;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.net.URISyntaxException;
 import java.util.Properties;
 
 import org.apache.log4j.PropertyConfigurator;
@@ -31,20 +32,31 @@ public final class Tools {
      * @throws ToolsException
      */
     public static void loadNativeLibs() throws ToolsException {
+        StringBuilder nativeLibsPath = new StringBuilder();
+        File jarpath;
+
+        try {
+            jarpath = new File(Tools.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        } catch (URISyntaxException ex) {
+            throw new ToolsException("", ex);
+        }
+
+        nativeLibsPath.append(jarpath.getParentFile().getAbsolutePath());
+
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
             LOGGER.info("loading native libraries");
-            String nativeLibsPath = "libs/native/x64";
-            if (System.getProperty("os.arch").toLowerCase().compareTo("x86") == 0) {
-                nativeLibsPath = "libs/native/x86";
+            if ((System.getProperty("os.arch").toLowerCase().compareTo("x86") == 0)
+                    || (System.getProperty("sun.arch.data.model").toLowerCase().compareTo("32") == 0)) {
+                nativeLibsPath.append("/libs/native/x86");
+            } else {
+                nativeLibsPath.append("/libs/native/x64");
             }
-            System.setProperty("java.library.path", nativeLibsPath);
 
-            Field fieldSysPath;
+            nativeLibsPath.append("/sqljdbc_auth.dll");
+
             try {
-                fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
-                fieldSysPath.setAccessible(true);
-                fieldSysPath.set(null, null);
-            } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+                System.load(nativeLibsPath.toString());
+            } catch (SecurityException ex) {
                 throw new ToolsException("", ex);
             }
         }
@@ -57,18 +69,18 @@ public final class Tools {
      * @param flywayProperties
      */
     public static void mergeProperties(Properties connectionProperties, Properties flywayProperties) {
-        flywayProperties.setProperty("flyway.url",
-                (String) flywayProperties.getOrDefault("flyway.url", connectionProperties.getProperty("database.url")));
+        flywayProperties.setProperty("flyway.url", (String) flywayProperties.getOrDefault("flyway.url",
+                connectionProperties.getOrDefault("database.url", "")));
         flywayProperties.setProperty("flyway.user", (String) flywayProperties.getOrDefault("flyway.user",
-                connectionProperties.getProperty("database.user")));
+                connectionProperties.getOrDefault("database.user", "")));
         flywayProperties.setProperty("flyway.password", (String) flywayProperties.getOrDefault("flyway.password",
-                connectionProperties.getProperty("database.password")));
+                connectionProperties.getOrDefault("database.password", "")));
         flywayProperties.setProperty("flyway.placeholders.DatabaseName",
                 (String) flywayProperties.getOrDefault("flyway.placeholders.DatabaseName",
-                        connectionProperties.getProperty("database.database")));
+                        connectionProperties.getOrDefault("database.database", "")));
         flywayProperties.setProperty("flyway.placeholders.OutputDatabaseName",
                 (String) flywayProperties.getOrDefault("flyway.placeholders.OutputDatabaseName",
-                        connectionProperties.getProperty("database.outputdatabase")));
+                        connectionProperties.getOrDefault("database.outputdatabase", "")));
     }
 
     /**

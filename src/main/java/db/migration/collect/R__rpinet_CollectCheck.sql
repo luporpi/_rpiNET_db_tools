@@ -92,7 +92,7 @@ EXEC sp_executesql @Sql,
     @ergout = @erg OUTPUT
 
 SET @output = @output + 'BC: ' + CAST(@erg AS NVARCHAR(5))
-SET @sql = N'SELECT @ergout = (count(name)+6) from (' + N'SELECT ROUTINE_NAME AS name FROM ' + QUOTENAME(@DatabaseName) + 
+SET @sql = N'SELECT @ergout = (count(name)+7) from (' + N'SELECT ROUTINE_NAME AS name FROM ' + QUOTENAME(@DatabaseName) + 
     N'.information_schema.routines WHERE routine_type in (''procedure'', ''function'') ' + N'UNION ' + N'SELECT name FROM ' + 
     QUOTENAME(@DatabaseName) + N'.sys.triggers) a';
 SET @erg = 0;

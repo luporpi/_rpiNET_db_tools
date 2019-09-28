@@ -1,0 +1,1 @@
+INSERT INTO rpinet_collect_bc_common_tab VALUES('Query Hash');

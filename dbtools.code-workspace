@@ -27,7 +27,7 @@
 			},
 			{
 				"type": "java",
-				"name": "Debug (Launch) with command line",
+				"name": "rpinet_dbtools test",
 				"request": "launch",
 				"mainClass": "",
 				"args": "-d conf/test_database.conf -f conf/test_flyway.conf -c -l conf/test_log4j.properties"

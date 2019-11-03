@@ -1,6 +1,3 @@
--- EXEC dbo.stpSecurity_Checklist
-
-GO
 IF (OBJECT_ID('dbo.stpSecurity_Checklist') IS NULL) EXEC('CREATE PROCEDURE dbo.stpSecurity_Checklist AS SELECT 1')
 GO
 
@@ -10,7 +7,7 @@ GO
 -- Checklist de segurança para ambientes SQL Server - Mais de 70 validações de segurança!!
 -- 
 -- Precisa de ajuda para corrigir algum problema?
--- contato@fabriciolima.net
+-- comercial@fabriciolima.net
 --
 --------------------------------------------------------------------------------------------------------------------
 
@@ -20,6 +17,9 @@ ALTER PROCEDURE dbo.stpSecurity_Checklist (
 )
 AS 
 BEGIN
+
+
+    -- DECLARE @language VARCHAR(2) = 'pt', @heavy_operations BIT = 1
 
 
     SET NOCOUNT ON
@@ -62,13 +62,13 @@ BEGIN
         ELSE 2019
     END)
 
-    
-    SET @language = (CASE
+	
+	SET @language = (CASE
         WHEN NULLIF(LTRIM(RTRIM(@language)), '') IS NULL THEN (SELECT CASE WHEN [value] IN (5, 7, 27) THEN 'pt' ELSE 'en' END FROM sys.configurations WHERE [name] = 'default language')
         ELSE @language 
     END)
 
-    
+	
     ---------------------------------------------------------------------------------------------------------------
     -- Idiomas
     ---------------------------------------------------------------------------------------------------------------
@@ -2586,43 +2586,67 @@ BEGIN
 
     SET @Resultado = NULL
 
-    SET @Resultado = (
-        SELECT 
-			name AS 'Contained/@name',
-			containment AS 'Contained/@containment', 
-			containment_desc AS 'Contained/@contaiment_type', 
-			is_auto_close_on AS 'Contained/@auto_close'
-		FROM 
-			sys.databases
+	IF (@Versao >= 2014)
+	BEGIN
+
+		DECLARE @Configuracao_AC_Habilitado TABLE ( Resultado XML )
+
+		INSERT INTO @Configuracao_AC_Habilitado
+		EXEC('
+			SELECT 
+				[name] AS ''Contained/@name'',
+				containment AS ''Contained/@containment'', 
+				containment_desc AS ''Contained/@contaiment_type'', 
+				is_auto_close_on AS ''Contained/@auto_close''
+			FROM 
+				sys.databases
+			WHERE 
+				containment <> 0 
+				AND is_auto_close_on <> 0
+			FOR XML PATH(''''), ROOT(''Configuracao_AC_Habilitado''), TYPE'
+		)
+
+		SET @Resultado = (
+			SELECT TOP(1)
+				Resultado
+			FROM 
+				@Configuracao_AC_Habilitado
+		)
+
+
+		IF (@language = 'pt')
+		BEGIN
+        
+			UPDATE #Resultado
+			SET 
+				Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possível problema encontrado' END),
+				Ds_Detalhes = @Resultado
+			WHERE 
+				Id_Verificacao = 18
+
+		END
+		ELSE IF (@language = 'en')
+		BEGIN
+
+			UPDATE #Resultado
+			SET 
+				Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possible issue found' END),
+				Ds_Detalhes = REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Configuracao_AC_Habilitado>', 'Contained_AC_Enabled>')
+			WHERE 
+				Id_Verificacao = 18
+        
+		END
+
+	END
+	ELSE BEGIN
+
+		UPDATE #Resultado
+		SET 
+			Ds_Resultado = (CASE WHEN @language = 'pt' THEN 'Não suportado' ELSE 'Not supported' END)
 		WHERE 
-			containment <> 0 
-			AND is_auto_close_on <> 0
-		FOR XML PATH(''), ROOT('Configuracao_AC_Habilitado'), TYPE
-    )
+			Id_Verificacao = 18
 
-
-    IF (@language = 'pt')
-    BEGIN
-        
-        UPDATE #Resultado
-        SET 
-            Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possível problema encontrado' END),
-            Ds_Detalhes = @Resultado
-        WHERE 
-            Id_Verificacao = 18
-
-    END
-    ELSE IF (@language = 'en')
-    BEGIN
-
-        UPDATE #Resultado
-        SET 
-            Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possible issue found' END),
-            Ds_Detalhes = REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Configuracao_AC_Habilitado>', 'Contained_AC_Enabled>')
-        WHERE 
-            Id_Verificacao = 18
-        
-    END
+	END
 
 	---------------------------------------------------------------------------------------------------------------
     -- Verify Max Number Error Log's are greater than the default
@@ -2632,9 +2656,13 @@ BEGIN
 	DECLARE @NumErrorLogs int;
 	DECLARE @ErrorLog int;
 
-	EXEC master.sys.xp_instance_regread N'HKEY_LOCAL_MACHINE',N'Software\Microsoft\MSSQLServer\MSSQLServer',N'NumErrorLogs',@NumErrorLogs OUTPUT;
+	EXEC master.sys.xp_instance_regread 
+        N'HKEY_LOCAL_MACHINE',
+        N'Software\Microsoft\MSSQLServer\MSSQLServer',
+        N'NumErrorLogs',
+        @NumErrorLogs OUTPUT;
 
-	SET @ErrorLog = (SELECT CASE WHEN @NumErrorLogs >=12 THEN NULL ELSE 1 END)
+	SET @ErrorLog = (SELECT CASE WHEN ISNULL(@NumErrorLogs, 0) >= 12 THEN NULL ELSE 1 END)
 	SET @NumErrorLogs = CASE WHEN @ErrorLog IS NULL THEN NULL ELSE @NumErrorLogs END
 
     SET @Resultado = (
@@ -6004,6 +6032,7 @@ WHERE
         -- Corrigindo elementos não fechados corretamente
         SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>', '</th><th>')
         SET @RetornoTabela = REPLACE(@RetornoTabela, '<tr></th>', '<tr>')
+        SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>Build<th ', '<th>Build</th><th ')
         SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>Release Date</tr>', '<th>Release Date</th></tr>')
 
         SET @RetornoTabela = REPLACE(@RetornoTabela, '<td>', '</td><td>')
@@ -6018,9 +6047,10 @@ WHERE
         SET @RetornoTabela = REPLACE(@RetornoTabela, '&kbln', '&amp;kbln')
         SET @RetornoTabela = REPLACE(@RetornoTabela, '<br>', '<br/>')
 
+        
         SET @dadosXML = CONVERT(XML, @RetornoTabela)
 
-
+        
         DECLARE @Atualizacoes_SQL_Server TABLE
         (
             [Ultimo_Build] VARCHAR(100),
@@ -6280,6 +6310,5 @@ END
 
 
 
--- EXEC dbo.stpSecurity_Checklist
+-- EXEC dbo.stpSecurity_Checklist @language = 'pt'
 
-GO

@@ -40,7 +40,7 @@ AS
 SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-SELECT @Version = '7.9', @VersionDate = '20191024';
+SELECT @Version = '7.91', @VersionDate = '20191202';
 SET @OutputType  = UPPER(@OutputType);
 
 IF(@VersionCheckMode = 1)
@@ -2207,6 +2207,15 @@ BEGIN
 			sz.page_io_latch_wait_count,
 			CONVERT(VARCHAR(10), (sz.page_io_latch_wait_in_ms / 1000) / 86400) + ':' + CONVERT(VARCHAR(20), DATEADD(s, (sz.page_io_latch_wait_in_ms / 1000), 0), 108) AS page_io_latch_wait_time,
             ct.create_tsql,
+            CASE 
+                WHEN s.is_primary_key = 1 AND s.index_definition <> '[HEAP]'
+                THEN N'--ALTER TABLE ' + QUOTENAME(s.[schema_name]) + N'.' + QUOTENAME(s.[object_name])
+                        + N' DROP CONSTRAINT ' + QUOTENAME(s.index_name) + N';'
+                WHEN s.is_primary_key = 0 AND s.index_definition <> '[HEAP]'
+                    THEN N'--DROP INDEX '+ QUOTENAME(s.index_name) + N' ON ' + 
+                        QUOTENAME(s.[schema_name]) + N'.' + QUOTENAME(s.[object_name]) + N';'
+                ELSE N''
+            END AS drop_tsql,
             1 AS display_order
         FROM #IndexSanity s
         LEFT JOIN #IndexSanitySize sz ON 
@@ -2222,7 +2231,7 @@ BEGIN
                 N'SQL Server First Responder Kit' ,   
                 N'http://FirstResponderKit.org' ,
                 N'From Your Community Volunteers',
-                NULL,@DaysUptimeInsertValue,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                NULL,@DaysUptimeInsertValue,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
                 0 AS display_order
     )
     SELECT 
@@ -2247,7 +2256,8 @@ BEGIN
 			page_latch_wait_time as [Page Latch Wait Time (D:H:M:S)],
 			page_io_latch_wait_count AS [Page IO Latch Wait Count],								
 			page_io_latch_wait_time as [Page IO Latch Wait Time (D:H:M:S)],
-            create_tsql AS [Create TSQL]
+            create_tsql AS [Create TSQL],
+            drop_tsql AS [Drop TSQL]
     FROM table_mode_cte
     ORDER BY display_order ASC, key_column_names ASC
     OPTION    ( RECOMPILE );                        
@@ -2286,6 +2296,15 @@ BEGIN
     			sz.page_io_latch_wait_count,
     			CONVERT(VARCHAR(10), (sz.page_io_latch_wait_in_ms / 1000) / 86400) + '':'' + CONVERT(VARCHAR(20), DATEADD(s, (sz.page_io_latch_wait_in_ms / 1000), 0), 108) AS page_io_latch_wait_time,
                 ct.create_tsql,
+                CASE 
+                    WHEN s.is_primary_key = 1 AND s.index_definition <> ''[HEAP]''
+                    THEN N''--ALTER TABLE '' + QUOTENAME(s.[schema_name]) + N''.'' + QUOTENAME(s.[object_name])
+                            + N'' DROP CONSTRAINT '' + QUOTENAME(s.index_name) + N'';''
+                    WHEN s.is_primary_key = 0 AND s.index_definition <> ''[HEAP]''
+                        THEN N''--DROP INDEX ''+ QUOTENAME(s.index_name) + N'' ON '' + 
+                            QUOTENAME(s.[schema_name]) + N''.'' + QUOTENAME(s.[object_name]) + N'';''
+                    ELSE N''''
+                END AS drop_tsql,
                 1 AS display_order
             FROM #IndexSanity s
             LEFT JOIN #IndexSanitySize sz ON 
@@ -2301,7 +2320,7 @@ BEGIN
                     ''SQL Server First Responder Kit'' ,   
                     ''http://FirstResponderKit.org'' ,
                     ''From Your Community Volunteers'',
-                    NULL,'''+@DaysUptimeInsertValue+''',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                    NULL,'''+@DaysUptimeInsertValue+''',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
                     0 AS display_order
             )
             SELECT 
@@ -2326,7 +2345,8 @@ BEGIN
         			page_latch_wait_time as [Page Latch Wait Time (D:H:M:S)],
         			page_io_latch_wait_count AS [Page IO Latch Wait Count],								
         			page_io_latch_wait_time as [Page IO Latch Wait Time (D:H:M:S)],
-                    create_tsql AS [Create TSQL]
+                    create_tsql AS [Create TSQL],
+                    drop_tsql AS [Drop TSQL]
             INTO ' + @OutputDatabaseName + '.' + @OutputSchemaName + '.' + @OutputTableNameNEW + '
             FROM table_mode_cte
             ORDER BY display_order ASC, key_column_names ASC
@@ -4976,12 +4996,12 @@ BEGIN;
 											[schema_name] NVARCHAR(128), 
 											[table_name] NVARCHAR(128), 
 											[index_name] NVARCHAR(128),
-                                            [Drop_Tsql] NVARCHAR(4000),
-                                            [Create_Tsql] NVARCHAR(4000), 
+                                            [Drop_Tsql] NVARCHAR(MAX),
+                                            [Create_Tsql] NVARCHAR(MAX), 
 											[index_id] INT, 
 											[db_schema_object_indexid] NVARCHAR(500), 
 											[object_type] NVARCHAR(15), 
-											[index_definition] NVARCHAR(4000), 
+											[index_definition] NVARCHAR(MAX), 
 											[key_column_names_with_sort_order] NVARCHAR(MAX), 
 											[count_key_columns] INT, 
 											[include_column_names] NVARCHAR(MAX), 

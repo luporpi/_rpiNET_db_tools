@@ -4,7 +4,7 @@ Copyright (c) 2020 Ralf Pickel
 
 Copyright (c) 2020 Brent Ozar Unlimited
 
-Copyright (c) 2015-2019 Konstantin Taranov
+Copyright (c) 2015-2020 Konstantin Taranov
 
 Copyright (c) 2018 Josh Darnell
 

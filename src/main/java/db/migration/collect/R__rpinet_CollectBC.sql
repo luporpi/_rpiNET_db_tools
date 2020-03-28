@@ -17,8 +17,8 @@ BEGIN
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-    SELECT @Version = '3.3.3',
-        @VersionDate = '20200210';
+    SELECT @Version = '3.3.4',
+        @VersionDate = '20200329';
 
     IF (@VersionCheckMode = 1)
     BEGIN
@@ -117,10 +117,11 @@ BEGIN
             )
     BEGIN
         SET @counter = @counter + 1;
-
         -- reuse data from first run of sp_BlitzCache
-        IF @counter = 2
-            SET @Reanalyze = 1
+        -- #28: Disable reanalyze
+        -- SSFRK 20200324 breaks this functionality
+        --IF @counter = 2
+        --    SET @Reanalyze = 1
         SET @sql = N'sp_BlitzCache ' + N'@OutputDatabaseName=@OutputDatabaseName,' + N'@OutputSchemaName=@OutputSchemaName,' + 
             N'@OutputTableName=@OutputTableName,' + N'@Databasename=@Databasename,' + N'@Top=@Top,' + 
             N'@SortOrder=@SortOrder,' + N'@Reanalyze=@Reanalyze,' + N'@HideSummary=@HideSummary';

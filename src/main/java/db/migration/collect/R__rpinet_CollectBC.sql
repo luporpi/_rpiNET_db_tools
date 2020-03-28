@@ -117,10 +117,11 @@ BEGIN
             )
     BEGIN
         SET @counter = @counter + 1;
-
         -- reuse data from first run of sp_BlitzCache
-        IF @counter = 2
-            SET @Reanalyze = 1
+        -- #28: Disable reanalyze
+        -- SSFRK 20200324 breaks this functionality
+        --IF @counter = 2
+        --    SET @Reanalyze = 1
         SET @sql = N'sp_BlitzCache ' + N'@OutputDatabaseName=@OutputDatabaseName,' + N'@OutputSchemaName=@OutputSchemaName,' + 
             N'@OutputTableName=@OutputTableName,' + N'@Databasename=@Databasename,' + N'@Top=@Top,' + 
             N'@SortOrder=@SortOrder,' + N'@Reanalyze=@Reanalyze,' + N'@HideSummary=@HideSummary';

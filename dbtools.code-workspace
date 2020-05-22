@@ -1,23 +1,28 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"java.configuration.updateBuildConfiguration": "automatic",
-		"maven.view": "hierarchical"
-	},
-	"launch": {
-		"configurations": [
-			
-			{
-				"type": "java",
-				"name": "rpinet_dbtools visrpi",
-				"request": "launch",
-				"mainClass": "",
-				"args": "-d conf/test_database.conf -f conf/test_flyway.conf -l conf/test_log4j.properties"
-			}
-		]
-	}
+    "folders": [{
+        "path": "."
+    }],
+    "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "maven.view": "hierarchical"
+    },
+    "launch": {
+        "configurations": [
+
+            {
+                "type": "java",
+                "name": "Production",
+                "request": "launch",
+                "mainClass": "",
+                "args": "-d conf/test_database.conf -f conf/test_flyway.conf -l conf/test_log4j.properties"
+            },
+            {
+                "type": "java",
+                "name": "Develop",
+                "request": "launch",
+                "mainClass": "",
+                "args": "-d conf/dev_database.conf -f conf/dev_flyway.conf -l conf/dev_log4j.properties"
+            }
+        ]
+    }
 }

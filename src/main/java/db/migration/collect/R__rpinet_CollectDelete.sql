@@ -28,7 +28,7 @@ BEGIN
         @like NVARCHAR(100) = 'b[ci][_]%',
         @timestampstring NVARCHAR(50) = NULL;
 
-    SET @timestampstring = REPLACE(CONVERT(VARCHAR(8), @Timestamp, 112) + CONVERT(VARCHAR(8), @Timestamp, 114), ':', '');
+    SET @timestampstring = dbo.rpinet_timestamp(@Timestamp);
 
     RAISERROR (
             @timestampstring,

@@ -84,7 +84,7 @@ BEGIN
         @ergout = @erg OUTPUT,
         @tsout = @Timestamp OUTPUT
 
-    SET @TimestampString = REPLACE(CONVERT(VARCHAR(8), @Timestamp, 112) + CONVERT(VARCHAR(8), @Timestamp, 114), ':', '');
+    SET @TimestampString = dbo.rpinet_timestamp(@Timestamp);
     SET @sql = 'SELECT @ergout = count(name) from sys.objects where type = ''U'' AND name LIKE ''bc_%' + @TimestampString + 
         '''';
     SET @erg = 0;

@@ -11,4 +11,4 @@ SELECT idx,
     dbo.rpinet_timestamp(StartDate) StartDate,
     dbo.rpinet_timestamp(EndDate) EndDate,
     Killed
-FROM dbo.rpinet_collect_log_tab
+FROM dbo.rpinet_collect_log_tab;

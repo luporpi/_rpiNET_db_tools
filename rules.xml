@@ -10,6 +10,7 @@
         <ignoreVersion type="regex">(?i).*RC(?:-?\d+)?</ignoreVersion>
         <ignoreVersion type="regex">(?i).*CR(?:-?\d+)?</ignoreVersion>
         <ignoreVersion type="regex">(?i).*M(?:-?\d+)?</ignoreVersion>
+        <ignoreVersion type="regex">(?i).*Preview(?:-?\d+)?</ignoreVersion>
     </ignoreVersions>
     <rules>
     </rules>

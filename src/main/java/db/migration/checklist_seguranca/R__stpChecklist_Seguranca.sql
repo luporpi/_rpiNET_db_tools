@@ -68,7 +68,43 @@ BEGIN
         ELSE @language 
     END)
 
-	
+	---------------------------------------------------------------------------------------------------------------
+    -- Reference to other Security Test Frameworks
+    ---------------------------------------------------------------------------------------------------------------
+	DECLARE @Reference TABLE 
+	( 
+		CodeID INT
+		, Reference NVARCHAR(500)
+	)
+	INSERT INTO @Reference (CodeID, Reference)
+	VALUES(606, 'CIS 1.01')
+	,(601, 'CIS 1.02')
+	, (4, 'CIS 2.01')
+	, (202, 'CIS 2.02')
+	, (5, 'CIS 2.03')
+	, (10, 'CIS 2.04')
+	, (201, 'CIS 2.05')
+	, (13, 'CIS 2.06')
+	, (12, 'CIS 2.07')
+	, (9, 'CIS 2.08')
+	, (1, 'CIS 2.09')
+	, (608, 'CIS 2.10')
+	, (600, 'CIS 2.11')
+	, (602, 'CIS 2.12')
+	, (101, 'CIS 2.13; CIS 2.14; CIS 2.17')
+	, (200, 'CIS 2.15')
+	, (18, 'CIS 2.16')
+	, (3, 'CIS 3.01')
+	, (408, 'CIS 3.02')
+	, (102, 'CIS 3.03')
+	, (20, 'CIS 3.04')
+	, (603, 'CIS 3.05; CIS 3.06')
+	, (111, 'CIS 3.08')
+	, (109, 'CIS 3.09')
+	, (110, 'CIS 3.10')
+	, (112, 'CIS 3.10')
+
+
     ---------------------------------------------------------------------------------------------------------------
     -- Idiomas
     ---------------------------------------------------------------------------------------------------------------
@@ -307,6 +343,17 @@ BEGIN
                 'https://www.brentozar.com/archive/2015/09/forgotten-maintenance-cycling-the-sql-server-error-log/',
                 NULL
             ),
+			(
+			  20, 
+				'Configuração',
+				'SQL autenticação desativado para bancos de dados contidos',
+				NULL, 
+				'Os bancos de dados contidos não impõem regras de complexidade de senha para usuários autenticados pelo SQL. A ausência de uma política de senha imposta pode aumentar a probabilidade de uma credencial fraca ser estabelecida em um banco de dados contido.',
+				'Verifica se algum banco de dados contido tem SQL autenticação ativado.',
+				'Essa configuração deve ser desativada para garantir que a autenticação SQL não seja usada em bancos de dados contidos',
+				'https://docs.microsoft.com/pt-br/sql/relational-databases/databases/security-best-practices-with-contained-databases?view=sql-server-2017',
+				NULL
+				),
             (
                 100, 
                 'Segurança de Usuários',
@@ -428,6 +475,28 @@ BEGIN
                 NULL,
                 NULL
             ),
+			   (
+			  111, 
+				'Segurança de Usuário',
+				'Menos permissão na conta [public]', 
+				NULL, 
+				'public é uma função de servidor fixa especial que contém todos os logins. Diferente de outras funções de servidor fixas, as permissões podem ser alteradas para a função pública. De acordo com o princípio de menos privilégios, a função de servidor público não deve ser usada para conceder permissões no escopo do servidor, pois elas seriam herdadas por todos os usuários.',
+				'Todo logon do SQL Server pertence à função pública e não pode ser removido dessa função. Portanto, todas as permissões concedidas a essa função estarão disponíveis para todos os logins, a menos que tenham sido explicitamente negadas a logons específicos ou funções de servidor definidas pelo usuário.',
+				'Adicione as permissões estranhas encontradas nos resultados da consulta aos logins específicos nas funções de servidor definidas pelo usuário que requerem o acesso e revogam isso da função pública.',
+				'https://docs.microsoft.com/en-us/sql/relationaldatabases/security/authentication-access/server-level-roles#permissions-of-fixedserver-roles',
+				NULL
+			  ),
+			  (
+			  112, 
+				'Segurança de Usuário',
+				'Acesso do SQL Agent Proxy para [public]', 
+				NULL, 
+				'A função de banco de dados público contém todos os usuários no banco de dados msdb. Os proxies do SQL Agent definem um contexto de segurança no qual uma etapa da tarefa pode ser executada.',
+				'A concessão de acesso a proxies do SQL Agent para a função pública permitiria que todos os usuários utilizassem o proxy que pode ter altos privilégios. Isso provavelmente quebraria o princípio de menos privilégios.',
+				'Revogar o acesso ao <proxyname> a partir da função pública',
+				'https://support.microsoft.com/en-us/help/2160741/best-practices-in-configuringsql-server-agent-proxy-account',
+				 NULL
+			  ),
             (
                 200, 
                 'Programação',
@@ -1104,6 +1173,17 @@ BEGIN
                 'https://www.brentozar.com/archive/2015/09/forgotten-maintenance-cycling-the-sql-server-error-log/',
                 NULL
             ),
+			(  
+			  20, 
+				 'Configurations',
+				 'Ensure SQL Authentication is not used in contained databases',
+				 NULL, 
+				 'Contained databases do not enforce password complexity rules for SQL Authenticated users.The absence of an enforced password policy may increase the likelihood of a weak credential being established in a contained database',
+				 'Checks if any contained databases has SQL Authentication enabled',
+				 'This setting should be disabled to ensure SQL Authentication is not used in contained databases',
+				 'https://docs.microsoft.com/en-us/sql/relational-databases/databases/securitybest-practices-with-contained-databases',
+				 NULL
+				 ),
             (
                 100, 
                 'User Security',
@@ -1225,6 +1305,28 @@ BEGIN
                 NULL,
                 NULL
             ),
+		   (
+			111, 
+				'User Security',
+				'Least Permission on [public] account', 
+				NULL, 
+				'public is a special fixed server role containing all logins. Unlike other fixed server roles, permissions can be changed for the public role. In keeping with the principle of least privileges, the public server role should not be used to grant permissions at the server scope as these would be inherited by all users.',
+				'Every SQL Server login belongs to the public role and cannot be removed from this role. Therefore, any permissions granted to this role will be available to all logins unless they have been explicitly denied to specific logins or user-defined server roles.',
+				'Add the extraneous permissions found in the query results to the specific logins to user-defined server roles which require the access and revoke that from the public role.',
+				'https://docs.microsoft.com/en-us/sql/relationaldatabases/security/authentication-access/server-level-roles#permissions-of-fixedserver-roles',
+				NULL
+				),
+			(
+			112, 
+				'User Security',
+				'SQL Agent Proxy access for [public]', 
+				NULL, 
+				'The public database role contains every user in the msdb database. SQL Agent proxies define a security context in which a job step can run.',
+				'Granting access to SQL Agent proxies for the public role would allow all users to utilize the proxy which may have high privileges. This would likely break the principle of least privileges.',
+				'Revoke access to the <proxyname> from the public role',
+				'https://support.microsoft.com/en-us/help/2160741/best-practices-in-configuringsql-server-agent-proxy-account',
+				NULL
+			),
             (
                 200, 
                 'Programming',
@@ -2697,6 +2799,52 @@ BEGIN
         
     END
 
+	---------------------------------------------------------------------------------------------------------------
+	-- Verify SQL Authentication is not used in contained databases
+	---------------------------------------------------------------------------------------------------------------
+ 
+	DECLARE @Configuracao_SQLAuth_Habilitado TABLE ( Resultado XML )
+
+	INSERT INTO @Configuracao_SQLAuth_Habilitado
+	EXEC('
+			SELECT 
+				name AS ''ContainedAuth/@DBUser''
+			FROM sys.database_principals
+			WHERE name NOT IN (''dbo'',''Information_Schema'',''sys'',''guest'')
+				AND type IN (''U'',''S'',''G'')
+				AND authentication_type = 2
+			FOR XML PATH(''''), ROOT(''Configuracao_SQLAuth_Habilitado''), TYPE'
+			)
+		
+			SET @Resultado = (
+				SELECT TOP(1)
+					Resultado
+				FROM 
+					@Configuracao_SQLAuth_Habilitado
+			)
+
+	 IF (@language = 'pt')
+	 BEGIN
+ 
+	 UPDATE #Resultado
+	 SET 
+	  Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possível problema encontrado' END),
+	  Ds_Detalhes = @Resultado
+	 WHERE 
+	  Id_Verificacao = 20
+
+	 END
+	 ELSE IF (@language = 'en')
+	 BEGIN
+
+	 UPDATE #Resultado
+	 SET 
+	  Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possible issue found' END),
+	  Ds_Detalhes = REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Configuracao_SQLAuth_Habilitado>', 'Error_Log>')
+	 WHERE 
+	  Id_Verificacao = 20
+ 
+	 END
     ---------------------------------------------------------------------------------------------------------------
     -- Verifica se existem erros no log de falha de login
     ---------------------------------------------------------------------------------------------------------------
@@ -3465,7 +3613,94 @@ WHERE
             Id_Verificacao = 110
         
     END        
-    ---------------------------------------------------------------------------------------------------------------
+
+	---------------------------------------------------------------------------------------------------------------
+ --  Default permissions specified by Microsoft are granted to the public server role
+ ---------------------------------------------------------------------------------------------------------------
+ 
+	 SET @Resultado = NULL
+
+	 SET @Resultado = (
+
+		SELECT 
+				class_desc AS 'Usuario/@class_desc'
+				, state_desc AS 'Usuario/@state_desc'
+		FROM master.sys.server_permissions
+		WHERE (grantee_principal_id = SUSER_SID(N'public') and state_desc LIKE 'GRANT%')
+			AND NOT (state_desc = 'GRANT' and [permission_name] = 'VIEW ANY DATABASE' and class_desc = 'SERVER')
+			AND NOT (state_desc = 'GRANT' and [permission_name] = 'CONNECT' and class_desc = 'ENDPOINT' and major_id = 2)
+			AND NOT (state_desc = 'GRANT' and [permission_name] = 'CONNECT' and class_desc = 'ENDPOINT' and major_id = 3)
+			AND NOT (state_desc = 'GRANT' and [permission_name] = 'CONNECT' and class_desc = 'ENDPOINT' and major_id = 4)
+			AND NOT (state_desc = 'GRANT' and [permission_name] = 'CONNECT' and class_desc = 'ENDPOINT' and major_id = 5)
+		FOR XML PATH(''), ROOT('Permissao_PUBLIC_role'), TYPE
+			 )
+ 
+
+	 IF (@language = 'pt')
+	 BEGIN
+ 
+	 UPDATE #Resultado
+	 SET 
+	  Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possível problema encontrado' END),
+	  Ds_Detalhes = @Resultado
+	 WHERE 
+	  Id_Verificacao = 111
+
+	 END
+	 ELSE IF (@language = 'en')
+	 BEGIN
+
+	 UPDATE #Resultado
+	 SET 
+	  Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possible issue found' END),
+	  Ds_Detalhes = REPLACE(REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Permissao_PUBLIC_role>', 'Permission_PUBLIC_role>'), '<Usuario ', '<User ')
+	 WHERE 
+	  Id_Verificacao = 111
+ 
+	 END
+
+  ---------------------------------------------------------------------------------------------------------------
+ --  Ensure the public role in the msdb database is not granted access to SQL Agent proxies
+ ---------------------------------------------------------------------------------------------------------------
+ 
+	 SET @Resultado = NULL
+
+	 SET @Resultado = (
+
+		SELECT 
+				sp.name AS 'Usuario/@proxyname'
+		FROM msdb.dbo.sysproxylogin spl
+			JOIN msdb.sys.database_principals dp ON dp.sid = spl.sid
+			JOIN msdb.dbo.sysproxies sp ON sp.proxy_id = spl.proxy_id
+		WHERE principal_id = USER_ID('public')
+		FOR XML PATH(''), ROOT('Permissao_PUBLIC_proxy'), TYPE
+			 )
+ 
+
+	 IF (@language = 'pt')
+	 BEGIN
+ 
+	 UPDATE #Resultado
+	 SET 
+	  Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possível problema encontrado' END),
+	  Ds_Detalhes = @Resultado
+	 WHERE 
+	  Id_Verificacao = 112
+
+	 END
+	 ELSE IF (@language = 'en')
+	 BEGIN
+
+	 UPDATE #Resultado
+	 SET 
+	  Ds_Resultado = (CASE WHEN @Resultado IS NULL THEN 'OK' ELSE 'Possible issue found' END),
+	  Ds_Detalhes = REPLACE(REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Permissao_PUBLIC_proxy>', 'Permission_PUBLIC_proxy>'), '<Usuario ', '<User ')
+	 WHERE	 
+	  Id_Verificacao = 112
+ 
+	 END
+
+	---------------------------------------------------------------------------------------------------------------
     -- Verifica se comandos xp_cmdshell estão permitidos na instância
     ---------------------------------------------------------------------------------------------------------------
     
@@ -5921,202 +6156,209 @@ WHERE
     -- Verifica a última atualização do SQL Server
     ---------------------------------------------------------------------------------------------------------------
 
-    IF (@IsAmazonRDS = 0)
-    BEGIN
+	BEGIN TRY
 
-        DECLARE @Fl_Ole_Automation_Ativado BIT = (SELECT (CASE WHEN CAST([value] AS VARCHAR(MAX)) = '1' THEN 1 ELSE 0 END) FROM sys.configurations WHERE [name] = 'Ole Automation Procedures')
+		IF (@IsAmazonRDS = 0)
+		BEGIN
+		
+			DECLARE @Fl_Ole_Automation_Ativado BIT = (SELECT (CASE WHEN CAST([value] AS VARCHAR(MAX)) = '1' THEN 1 ELSE 0 END) FROM sys.configurations WHERE [name] = 'Ole Automation Procedures')
  
-        IF (@Fl_Ole_Automation_Ativado = 0)
-        BEGIN
+			IF (@Fl_Ole_Automation_Ativado = 0)
+			BEGIN
  
-            EXEC sp_configure 'show advanced options', 1
-            RECONFIGURE WITH OVERRIDE
+				EXEC sp_configure 'show advanced options', 1
+				RECONFIGURE WITH OVERRIDE
     
-            EXEC sp_configure 'Ole Automation Procedures', 1
-            RECONFIGURE WITH OVERRIDE
+				EXEC sp_configure 'Ole Automation Procedures', 1
+				RECONFIGURE WITH OVERRIDE
     
-        END
+			END
 
 
     
-        DECLARE 
-            @obj INT,
-            @Url VARCHAR(8000),
-            @xml VARCHAR(MAX),
-            @resposta VARCHAR(MAX)
+			DECLARE 
+				@obj INT,
+				@Url VARCHAR(8000),
+				@xml VARCHAR(MAX),
+				@resposta VARCHAR(MAX)
         
-        SET @Url = 'http://sqlserverbuilds.blogspot.com/'
+			SET @Url = 'http://sqlserverbuilds.blogspot.com/'
  
-        EXEC sys.sp_OACreate 'MSXML2.ServerXMLHTTP', @obj OUT
-        EXEC sys.sp_OAMethod @obj, 'open', NULL, 'GET', @Url, false
-        EXEC sys.sp_OAMethod @obj, 'send'
+			EXEC sys.sp_OACreate 'MSXML2.ServerXMLHTTP', @obj OUT
+			EXEC sys.sp_OAMethod @obj, 'open', NULL, 'GET', @Url, false
+			EXEC sys.sp_OAMethod @obj, 'send'
  
  
-        DECLARE @xml_versao_sql TABLE (
-            Ds_Dados VARCHAR(MAX)
-        )
+			DECLARE @xml_versao_sql TABLE (
+				Ds_Dados VARCHAR(MAX)
+			)
  
-        INSERT INTO @xml_versao_sql(Ds_Dados)
-        EXEC sys.sp_OAGetProperty @obj, 'responseText' --, @resposta OUT
+			INSERT INTO @xml_versao_sql(Ds_Dados)
+			EXEC sys.sp_OAGetProperty @obj, 'responseText' --, @resposta OUT
     
     
-        EXEC sys.sp_OADestroy @obj
-
-
-
-        IF (@Fl_Ole_Automation_Ativado = 0)
-        BEGIN
+			EXEC sys.sp_OADestroy @obj
+				
+			
+			IF (@Fl_Ole_Automation_Ativado = 0)
+			BEGIN
  
-            EXEC sp_configure 'Ole Automation Procedures', 0
-            RECONFIGURE WITH OVERRIDE
+				EXEC sp_configure 'Ole Automation Procedures', 0
+				RECONFIGURE WITH OVERRIDE
  
-            EXEC sp_configure 'show advanced options', 0
-            RECONFIGURE WITH OVERRIDE
+				EXEC sp_configure 'show advanced options', 0
+				RECONFIGURE WITH OVERRIDE
  
-        END
- 
-    
-
-        DECLARE
-            @Versao_SQL_Build VARCHAR(10)
-    
-        SET @Versao_SQL_Build = (CASE LEFT(CONVERT(VARCHAR, SERVERPROPERTY('ProductVersion')), 2)
-            WHEN '8.' THEN '2000'
-            WHEN '9.' THEN '2005'
-            WHEN '10' THEN (
-                CASE
-                    WHEN LEFT(CONVERT(VARCHAR, SERVERPROPERTY('ProductVersion')), 4) = '10.5' THEN '2008 R2' 
-                    WHEN LEFT(CONVERT(VARCHAR, SERVERPROPERTY('ProductVersion')), 4) = '10.0' THEN '2008' 
-                END)
-            WHEN '11' THEN '2012'
-            WHEN '12' THEN '2014'
-            WHEN '13' THEN '2016'
-            WHEN '14' THEN '2017'
-            WHEN '15' THEN '2019'
-            ELSE '2019'
-        END)
-
-
-        SELECT TOP 1 @resposta = Ds_Dados FROM @xml_versao_sql
+			END
  
     
-        SET @xml = @resposta COLLATE SQL_Latin1_General_CP1251_CS_AS
 
-        DECLARE
-            @PosicaoInicialVersao INT,
-            @PosicaoFinalVersao INT,
-            @ExpressaoBuscar VARCHAR(100) = 'Microsoft SQL Server ' + @Versao_SQL_Build + ' Builds',
-            @RetornoTabela VARCHAR(MAX),
-            @dadosXML XML
+			DECLARE
+				@Versao_SQL_Build VARCHAR(10)
+    
+			SET @Versao_SQL_Build = (CASE LEFT(CONVERT(VARCHAR, SERVERPROPERTY('ProductVersion')), 2)
+				WHEN '8.' THEN '2000'
+				WHEN '9.' THEN '2005'
+				WHEN '10' THEN (
+					CASE
+						WHEN LEFT(CONVERT(VARCHAR, SERVERPROPERTY('ProductVersion')), 4) = '10.5' THEN '2008 R2' 
+						WHEN LEFT(CONVERT(VARCHAR, SERVERPROPERTY('ProductVersion')), 4) = '10.0' THEN '2008' 
+					END)
+				WHEN '11' THEN '2012'
+				WHEN '12' THEN '2014'
+				WHEN '13' THEN '2016'
+				WHEN '14' THEN '2017'
+				WHEN '15' THEN '2019'
+				ELSE '2019'
+			END)
 
-        SET @PosicaoInicialVersao = CHARINDEX(@ExpressaoBuscar, @xml) + LEN(@ExpressaoBuscar) + 6
-        SET @PosicaoFinalVersao = CHARINDEX('</table>', @xml, @PosicaoInicialVersao)
-        SET @RetornoTabela = SUBSTRING(@xml, @PosicaoInicialVersao, @PosicaoFinalVersao - @PosicaoInicialVersao + 8)
+
+			SELECT TOP 1 @resposta = Ds_Dados FROM @xml_versao_sql
+ 
+    
+			SET @xml = @resposta COLLATE SQL_Latin1_General_CP1251_CS_AS
+
+			DECLARE
+				@PosicaoInicialVersao INT,
+				@PosicaoFinalVersao INT,
+				@ExpressaoBuscar VARCHAR(100) = 'Microsoft SQL Server ' + @Versao_SQL_Build + ' Builds',
+				@RetornoTabela VARCHAR(MAX),
+				@dadosXML XML
+
+			SET @PosicaoInicialVersao = CHARINDEX(@ExpressaoBuscar, @xml) + LEN(@ExpressaoBuscar) + 6
+			SET @PosicaoFinalVersao = CHARINDEX('</table>', @xml, @PosicaoInicialVersao)
+			SET @RetornoTabela = SUBSTRING(@xml, @PosicaoInicialVersao, @PosicaoFinalVersao - @PosicaoInicialVersao + 8)
+
+			
+			-- Corrigindo classes sem aspas duplas ("")
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' border=1 cellpadding=4 cellspacing=0 bordercolor="#CCCCCC" style="border-collapse:collapse"', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' target=_blank rel=nofollow', ' target="_blank" rel="nofollow"')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=h', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=lsp', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=cu', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=sp', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=rtm', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' width=580', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' width=125', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=lcu', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=cve', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=lrtm', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=beta', '')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<div class="oxa">', '')
+
+			-- Corrigindo elementos não fechados corretamente
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>', '</th><th>')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<tr></th>', '<tr>')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>Build<th ', '<th>Build</th><th ')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>Release Date</tr>', '<th>Release Date</th></tr>')
+
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<td>', '</td><td>')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<tr></td>', '<tr>')
+
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '</tr>', '</td></tr>')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '</th></td>', '</th>')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '</td></td>', '</td>')
+
+			-- Removendo elementos de entidades HTML
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '&nbsp;', ' ')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '&kbln', '&amp;kbln')
+			SET @RetornoTabela = REPLACE(@RetornoTabela, '<br>', '<br/>')
+
+			
+			SET @dadosXML = CONVERT(XML, @RetornoTabela)
+
+			
+			DECLARE @Atualizacoes_SQL_Server TABLE
+			(
+				[Ultimo_Build] VARCHAR(100),
+				[Ultimo_Build_SQLSERVR.EXE] VARCHAR(100),
+				[Versao_Arquivo] VARCHAR(100),
+				[Q] VARCHAR(100),
+				[KB] VARCHAR(100),
+				[Descricao_KB] VARCHAR(100),
+				[Lancamento_KB] VARCHAR(100),
+				[Download_Ultimo_Build] VARCHAR(100)
+			)
 
 
-        -- Corrigindo classes sem aspas duplas ("")
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' border=1 cellpadding=4 cellspacing=0 bordercolor="#CCCCCC" style="border-collapse:collapse"', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' target=_blank rel=nofollow', ' target="_blank" rel="nofollow"')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=h', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=lsp', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=cu', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=sp', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=rtm', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' width=580', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' width=125', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=lcu', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=cve', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=lrtm', '')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, ' class=beta', '')
+			INSERT INTO @Atualizacoes_SQL_Server
+			SELECT
+				@dadosXML.value('(//table/tr/td[1])[1]','varchar(100)') AS Ultimo_Build,
+				@dadosXML.value('(//table/tr/td[2])[1]','varchar(100)') AS [Ultimo_Build_SQLSERVR.EXE],
+				@dadosXML.value('(//table/tr/td[3])[1]','varchar(100)') AS Versao_Arquivo,
+				@dadosXML.value('(//table/tr/td[4])[1]','varchar(100)') AS [Q],
+				@dadosXML.value('(//table/tr/td[5])[1]','varchar(100)') AS KB,
+				@dadosXML.value('(//table/tr/td[6]/a)[1]','varchar(100)') AS Descricao_KB,
+				@dadosXML.value('(//table/tr/td[7])[1]','varchar(100)') AS Lancamento_KB,
+				@dadosXML.value('(//table/tr/td[6]/a/@href)[1]','varchar(100)') AS Download_Ultimo_Build
+    
 
-        -- Corrigindo elementos não fechados corretamente
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>', '</th><th>')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<tr></th>', '<tr>')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>Build<th ', '<th>Build</th><th ')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<th>Release Date</tr>', '<th>Release Date</th></tr>')
+			DECLARE 
+				@Url_Ultima_Versao_SQL VARCHAR(500) = (SELECT TOP(1) Download_Ultimo_Build FROM @Atualizacoes_SQL_Server),
+				@Ultimo_Build VARCHAR(100) = (SELECT TOP(1) Ultimo_Build FROM @Atualizacoes_SQL_Server)
 
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<td>', '</td><td>')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<tr></td>', '<tr>')
+			SET @Resultado = NULL
 
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '</tr>', '</td></tr>')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '</th></td>', '</th>')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '</td></td>', '</td>')
+    
+			SET @Resultado = (
+				SELECT *
+				FROM @Atualizacoes_SQL_Server
+				FOR XML PATH, ROOT('Instalacao_Atualizacoes_SQL')
+			)
 
-        -- Removendo elementos de entidades HTML
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '&nbsp;', ' ')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '&kbln', '&amp;kbln')
-        SET @RetornoTabela = REPLACE(@RetornoTabela, '<br>', '<br/>')
 
+			IF (@language = 'pt')
+			BEGIN
         
-        SET @dadosXML = CONVERT(XML, @RetornoTabela)
+				UPDATE #Resultado
+				SET 
+					Ds_Resultado = (CASE WHEN CONVERT(VARCHAR(100), SERVERPROPERTY('ProductVersion')) >= @Ultimo_Build THEN 'OK' ELSE 'Possível problema encontrado' END),
+					Ds_Referencia = @Url_Ultima_Versao_SQL,
+					Ds_Detalhes = @Resultado
+				WHERE 
+					Id_Verificacao = 606
 
+			END
+			ELSE IF (@language = 'en')
+			BEGIN
+
+				UPDATE #Resultado
+				SET 
+					Ds_Resultado = (CASE WHEN CONVERT(VARCHAR(100), SERVERPROPERTY('ProductVersion')) >= @Ultimo_Build THEN 'OK' ELSE 'Possible issue found' END),
+					Ds_Referencia = @Url_Ultima_Versao_SQL,
+					Ds_Detalhes = REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Instalacao_Atualizacoes_SQL>', 'Installation_SQL_Updates>')
+				WHERE 
+					Id_Verificacao = 606
         
-        DECLARE @Atualizacoes_SQL_Server TABLE
-        (
-            [Ultimo_Build] VARCHAR(100),
-            [Ultimo_Build_SQLSERVR.EXE] VARCHAR(100),
-            [Versao_Arquivo] VARCHAR(100),
-            [Q] VARCHAR(100),
-            [KB] VARCHAR(100),
-            [Descricao_KB] VARCHAR(100),
-            [Lancamento_KB] VARCHAR(100),
-            [Download_Ultimo_Build] VARCHAR(100)
-        )
-
-
-        INSERT INTO @Atualizacoes_SQL_Server
-        SELECT
-            @dadosXML.value('(//table/tr/td[1])[1]','varchar(100)') AS Ultimo_Build,
-            @dadosXML.value('(//table/tr/td[2])[1]','varchar(100)') AS [Ultimo_Build_SQLSERVR.EXE],
-            @dadosXML.value('(//table/tr/td[3])[1]','varchar(100)') AS Versao_Arquivo,
-            @dadosXML.value('(//table/tr/td[4])[1]','varchar(100)') AS [Q],
-            @dadosXML.value('(//table/tr/td[5])[1]','varchar(100)') AS KB,
-            @dadosXML.value('(//table/tr/td[6]/a)[1]','varchar(100)') AS Descricao_KB,
-            @dadosXML.value('(//table/tr/td[7])[1]','varchar(100)') AS Lancamento_KB,
-            @dadosXML.value('(//table/tr/td[6]/a/@href)[1]','varchar(100)') AS Download_Ultimo_Build
+			END
     
 
-        DECLARE 
-            @Url_Ultima_Versao_SQL VARCHAR(500) = (SELECT TOP(1) Download_Ultimo_Build FROM @Atualizacoes_SQL_Server),
-            @Ultimo_Build VARCHAR(100) = (SELECT TOP(1) Ultimo_Build FROM @Atualizacoes_SQL_Server)
+		END
 
-        SET @Resultado = NULL
-
-    
-        SET @Resultado = (
-            SELECT *
-            FROM @Atualizacoes_SQL_Server
-            FOR XML PATH, ROOT('Instalacao_Atualizacoes_SQL')
-        )
-
-
-        IF (@language = 'pt')
-        BEGIN
-        
-            UPDATE #Resultado
-            SET 
-                Ds_Resultado = (CASE WHEN CONVERT(VARCHAR(100), SERVERPROPERTY('ProductVersion')) >= @Ultimo_Build THEN 'OK' ELSE 'Possível problema encontrado' END),
-                Ds_Referencia = @Url_Ultima_Versao_SQL,
-                Ds_Detalhes = @Resultado
-            WHERE 
-                Id_Verificacao = 606
-
-        END
-        ELSE IF (@language = 'en')
-        BEGIN
-
-            UPDATE #Resultado
-            SET 
-                Ds_Resultado = (CASE WHEN CONVERT(VARCHAR(100), SERVERPROPERTY('ProductVersion')) >= @Ultimo_Build THEN 'OK' ELSE 'Possible issue found' END),
-                Ds_Referencia = @Url_Ultima_Versao_SQL,
-                Ds_Detalhes = REPLACE(CAST(@Resultado AS VARCHAR(MAX)), 'Instalacao_Atualizacoes_SQL>', 'Installation_SQL_Updates>')
-            WHERE 
-                Id_Verificacao = 606
-        
-        END
-    
-
-    END
+	END TRY
+	BEGIN CATCH
+	    PRINT 'Error on Validation 606'
+	END CATCH
 
 
     ---------------------------------------------------------------------------------------------------------------
@@ -6311,4 +6553,5 @@ END
 
 
 -- EXEC dbo.stpSecurity_Checklist @language = 'pt'
+-- exec dbo.stpSecurity_Checklist  @language = 'en'
 

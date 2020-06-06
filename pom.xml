@@ -6,7 +6,7 @@
     </prerequisites>
     <groupId>net.luporpi.dbtools</groupId>
     <artifactId>_rpiNET_db_tools</artifactId>
-    <version>3.3.6-SNAPSHOT</version>
+    <version>3.3.7-SNAPSHOT</version>
     <scm>
         <developerConnection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</developerConnection>
         <connection>scm:git:https://github.com/luporpi/_rpiNET_db_tools</connection>

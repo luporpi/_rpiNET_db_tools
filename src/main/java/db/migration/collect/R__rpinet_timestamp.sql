@@ -1,0 +1,13 @@
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+
+IF OBJECT_ID('dbo.rpinet_timestamp') IS NULL
+    EXEC ('CREATE FUNCTION dbo.rpinet_timestamp (@date DATETIME) RETURNS NVARCHAR(16) AS BEGIN RETURN ''''; END;'
+            );
+GO
+
+ALTER FUNCTION [dbo].[rpinet_timestamp] (@date DATETIME)
+RETURNS NVARCHAR(16)
+AS
+BEGIN
+    RETURN REPLACE(CONVERT(VARCHAR(8), @date, 112) + CONVERT(VARCHAR(8), @date, 114), ':', '');
+END;

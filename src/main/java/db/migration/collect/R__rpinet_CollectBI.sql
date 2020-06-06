@@ -17,8 +17,8 @@ BEGIN
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-    SELECT @Version = '3.3.5',
-        @VersionDate = '20200506';
+    SELECT @Version = '3.3.6',
+        @VersionDate = '20200606';
 
     IF (@VersionCheckMode = 1)
     BEGIN
@@ -99,7 +99,7 @@ BEGIN
     IF @Killed = 1
         RETURN;
 
-    SET @TimestampString = REPLACE(CONVERT(VARCHAR(8), @Timestamp, 112) + CONVERT(VARCHAR(8), @Timestamp, 114), ':', '')
+    SET @TimestampString = dbo.rpinet_timestamp(@Timestamp);
 
     RAISERROR (
             N'Collect common data',

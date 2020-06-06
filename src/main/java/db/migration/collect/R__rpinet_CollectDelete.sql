@@ -14,8 +14,8 @@ BEGIN
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-    SELECT @Version = '3.3.5',
-        @VersionDate = '20200506';
+    SELECT @Version = '3.3.6',
+        @VersionDate = '20200606';
 
     IF (@VersionCheckMode = 1)
     BEGIN
@@ -28,7 +28,7 @@ BEGIN
         @like NVARCHAR(100) = 'b[ci][_]%',
         @timestampstring NVARCHAR(50) = NULL;
 
-    SET @timestampstring = REPLACE(CONVERT(VARCHAR(8), @Timestamp, 112) + CONVERT(VARCHAR(8), @Timestamp, 114), ':', '');
+    SET @timestampstring = dbo.rpinet_timestamp(@Timestamp);
 
     RAISERROR (
             @timestampstring,

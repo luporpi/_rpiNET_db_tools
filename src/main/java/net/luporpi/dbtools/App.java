@@ -45,13 +45,6 @@ public final class App {
             } catch (ToolsException ex) {
                 throw new MainException("Logging could not be initialized", ex);
             }
-
-            // load native libs
-            try {
-                Tools.loadNativeLibs();
-            } catch (ToolsException ex) {
-                LOGGER.warn("Unable to laod native libraries", ex);
-            }
         } catch (MainException ex) {
             mCmd.printHelp();
             ex.printStackTrace();

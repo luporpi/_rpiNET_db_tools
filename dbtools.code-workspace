@@ -22,6 +22,13 @@
                 "request": "launch",
                 "mainClass": "",
                 "args": "-d conf/dev_database.conf -f conf/dev_flyway.conf -l conf/dev_log4j.properties"
+            },
+            {
+                "type": "java",
+                "name": "Develop - Native",
+                "request": "launch",
+                "mainClass": "",
+                "args": "-d \"conf/dev_database - Kopie.conf\" -f \"conf/dev_flyway - Kopie.conf\" -l \"conf/dev_log4j - Kopie.properties\""
             }
         ]
     }

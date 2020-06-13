@@ -4,7 +4,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
@@ -32,32 +38,31 @@ public final class Tools {
      * @throws ToolsException
      */
     public static void loadNativeLibs() throws ToolsException {
-        StringBuilder nativeLibsPath = new StringBuilder();
-        File jarpath;
-
-        try {
-            jarpath = new File(Tools.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        } catch (URISyntaxException ex) {
-            throw new ToolsException("", ex);
-        }
-
-        nativeLibsPath.append(jarpath.getParentFile().getAbsolutePath());
-
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
             LOGGER.info("loading native libraries");
-            if ((System.getProperty("os.arch").toLowerCase().compareTo("x86") == 0)
-                    || (System.getProperty("sun.arch.data.model").toLowerCase().compareTo("32") == 0)) {
-                nativeLibsPath.append("/libs/native/x86");
-            } else {
-                nativeLibsPath.append("/libs/native/x64");
-            }
-
-            nativeLibsPath.append("/sqljdbc_auth.dll");
+            final StringBuilder nativeLibsPath = new StringBuilder();
+            File jarpath;
 
             try {
-                System.load(nativeLibsPath.toString());
-            } catch (SecurityException ex) {
+                jarpath = new File(Tools.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            } catch (final URISyntaxException ex) {
                 throw new ToolsException("", ex);
+            }
+
+            nativeLibsPath.append(jarpath.getParentFile().getAbsolutePath());
+            nativeLibsPath.append("libs/native");
+
+            try (Stream<Path> walk = Files.walk(Paths.get(nativeLibsPath.toString()))) {
+                final List<String> results = walk.filter(f -> f.endsWith(".dll")).map(x -> x.toString())
+                        .collect(Collectors.toList());
+
+                try {
+                    results.forEach(result -> System.load(result));
+                } catch (final SecurityException ex) {
+                    throw new ToolsException("", ex);
+                }
+            } catch (final IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -68,7 +73,7 @@ public final class Tools {
      * @param connectionProperties
      * @param flywayProperties
      */
-    public static void mergeProperties(Properties connectionProperties, Properties flywayProperties) {
+    public static void mergeProperties(final Properties connectionProperties, final Properties flywayProperties) {
         flywayProperties.setProperty("flyway.url", (String) flywayProperties.getOrDefault("flyway.url",
                 connectionProperties.getOrDefault("database.url", "")));
         flywayProperties.setProperty("flyway.user", (String) flywayProperties.getOrDefault("flyway.user",
@@ -90,12 +95,12 @@ public final class Tools {
      * @return
      * @throws ToolsException
      */
-    public static Properties loadProperties(String propertiesFile) throws ToolsException {
-        Properties properties = new Properties();
+    public static Properties loadProperties(final String propertiesFile) throws ToolsException {
+        final Properties properties = new Properties();
 
         try (FileInputStream input = new FileInputStream(propertiesFile)) {
             properties.load(input);
-        } catch (IOException ex) {
+        } catch (final IOException ex) {
             throw new ToolsException("unable to load properties file: " + propertiesFile, ex);
         }
 
@@ -108,8 +113,8 @@ public final class Tools {
      * @param logProperties
      * @throws ToolsException
      */
-    public static void initLogger(String logProperties) throws ToolsException {
-        Properties log4jProperties = Tools.loadProperties(logProperties);
+    public static void initLogger(final String logProperties) throws ToolsException {
+        final Properties log4jProperties = Tools.loadProperties(logProperties);
 
         PropertyConfigurator.configure(log4jProperties);
     }

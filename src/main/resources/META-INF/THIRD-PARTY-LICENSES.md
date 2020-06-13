@@ -212,7 +212,7 @@ Source Text:
  
 -------------------------------------------------------------------------
 
-Package: flyway-core-5.2.4.jar
+Package: flyway-core-6.4.4.jar
 License: Apache License, Version 2.0
 License Source: LICENSE.txt
 

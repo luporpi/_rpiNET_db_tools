@@ -1,16 +1,8 @@
 package net.luporpi.dbtools.utils;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
@@ -30,41 +22,6 @@ public final class Tools {
      */
     protected Tools() {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Load native libraries.
-     * 
-     * @throws ToolsException
-     */
-    public static void loadNativeLibs() throws ToolsException {
-        if (System.getProperty("os.name").toLowerCase().contains("win")) {
-            LOGGER.info("loading native libraries");
-            final StringBuilder nativeLibsPath = new StringBuilder();
-            File jarpath;
-
-            try {
-                jarpath = new File(Tools.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            } catch (final URISyntaxException ex) {
-                throw new ToolsException("", ex);
-            }
-
-            nativeLibsPath.append(jarpath.getParentFile().getAbsolutePath());
-            nativeLibsPath.append("libs/native");
-
-            try (Stream<Path> walk = Files.walk(Paths.get(nativeLibsPath.toString()))) {
-                final List<String> results = walk.filter(f -> f.endsWith(".dll")).map(x -> x.toString())
-                        .collect(Collectors.toList());
-
-                try {
-                    results.forEach(result -> System.load(result));
-                } catch (final SecurityException ex) {
-                    throw new ToolsException("", ex);
-                }
-            } catch (final IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**

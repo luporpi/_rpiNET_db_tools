@@ -212,7 +212,7 @@ Source Text:
  
 -------------------------------------------------------------------------
 
-Package: flyway-core-5.2.4.jar
+Package: flyway-core-6.4.4.jar
 License: Apache License, Version 2.0
 License Source: LICENSE.txt
 
@@ -443,7 +443,7 @@ Source Text:
    limitations under the License.  
 
 -------------------------------------------------------------------------
-Package: mssql-jdbc-7.0.0.jre8.jar
+Package: mssql-jdbc-8.2.2.jre8.jar
 License: MIT License
 License Source: http://www.opensource.org/licenses/mit-license.php
 
@@ -451,7 +451,7 @@ Source Text:
 
 -------------------------------------------------------------------------
 
-Package: slf4j-api-1.7.26.jar
+Package: slf4j-api-1.7.30.jar
 License: MIT license
 License Source: https://www.slf4j.org/license.html
 
@@ -459,7 +459,7 @@ Source Text:
 
 -------------------------------------------------------------------------
 
-Package: slf4j-log4j12-1.7.26.jar
+Package: slf4j-log4j12-1.7.30.jar
 License: MIT license
 License Source: https://www.slf4j.org/license.html
 

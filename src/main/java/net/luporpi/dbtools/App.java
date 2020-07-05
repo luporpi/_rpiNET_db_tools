@@ -72,12 +72,6 @@ public final class App {
         Tools.mergeProperties(databaseProperties, flywayProperties);
         // load properties - END
 
-        if (mCmd.isSQL2016()) {
-            LOGGER.info("Skip scripts that require SQL Server 2016 or greater");
-            flywayProperties.setProperty("flyway.locations", flywayProperties.getProperty("flyway.locations")
-                    .replace("_rpiNET_SSFRK-luporpi", "_rpiNET_SSFRK-luporpi/all"));
-        }
-
         // create database
         if (mCmd.isCreateDb()) {
             LOGGER.info("Create database");

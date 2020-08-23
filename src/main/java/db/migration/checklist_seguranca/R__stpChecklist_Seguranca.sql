@@ -3344,7 +3344,7 @@ WHERE
 FROM
     [?].sys.database_principals A WITH(NOLOCK)
     LEFT JOIN [?].sys.database_role_members B WITH(NOLOCK) ON A.principal_id = B.member_principal_id
-    LEFT JOIN [?].sys.database_permissions C WITH(NOLOCK) ON A.principal_id = C.grantee_principal_id
+    LEFT JOIN [?].sys.database_permissions C WITH(NOLOCK) ON A.principal_id = C.grantee_principal_id AND C.[permission_name] <> ''CONNECT'' AND C.[state] = ''G''
 WHERE
     B.member_principal_id IS NULL
     AND C.grantee_principal_id IS NULL
@@ -3442,7 +3442,10 @@ WHERE
             C.[type_desc] = 'WINDOWS_LOGIN'
             AND C.principal_id > 10
             AND B.nt_domain NOT LIKE 'NT Service%'
+	    AND B.login_name NOT LIKE 'NT AUTHORITY\%'
+	    AND B.login_name NOT LIKE 'AUTORIDADE NT\%'
             AND A.auth_scheme <> 'Kerberos'
+	    AND A.net_transport <> 'Shared memory'
         ORDER BY
             2
         FOR XML PATH(''), ROOT('Usuarios_AD_Sem_Kerberos'), TYPE
@@ -3533,15 +3536,15 @@ WHERE
     SET @Resultado = NULL
 
     SET @Resultado = (
-       SELECT 
+		SELECT 
 			pr.[name] AS 'Usuario/@name',
 			pe.[permission_name] AS 'Usuario/@permission_name',
 			pe.[state_desc] AS 'Usuario/@state_desc'
 		FROM
-			sys.server_principals pr JOIN sys.server_permissions pe
-			ON pr.principal_id = pe.grantee_principal_id
+			sys.server_principals pr 
+			LEFT JOIN sys.server_permissions pe ON pr.principal_id = pe.grantee_principal_id
 		WHERE 
-			pr.name like 'BUILTIN%'
+			pr.[name] like 'BUILTIN%'
         FOR XML PATH(''), ROOT('Permissao_BUILTIN'), TYPE
     )
     
@@ -3568,7 +3571,7 @@ WHERE
             Id_Verificacao = 109
         
     END
-
+	
     ---------------------------------------------------------------------------------------------------------------
     -- Local Windows Groups SQL Permissions
     ---------------------------------------------------------------------------------------------------------------

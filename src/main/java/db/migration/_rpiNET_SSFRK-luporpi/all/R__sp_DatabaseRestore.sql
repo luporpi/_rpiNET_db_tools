@@ -26,6 +26,7 @@ ALTER PROCEDURE [dbo].[sp_DatabaseRestore]
     @StopAt NVARCHAR(14) = NULL,
     @OnlyLogsAfter NVARCHAR(14) = NULL,
     @SimpleFolderEnumeration BIT = 0,
+	@SkipBackupsAlreadyInMsdb BIT = 0,
 	@DatabaseOwner sysname = NULL,
     @Execute CHAR(1) = Y,
     @Debug INT = 0, 
@@ -38,7 +39,7 @@ SET NOCOUNT ON;
 
 /*Versioning details*/
 
-SELECT @Version = '7.99', @VersionDate = '20200913';
+SELECT @Version = '7.9999', @VersionDate = '20201114';
 
 IF(@VersionCheckMode = 1)
 BEGIN
@@ -226,6 +227,7 @@ DECLARE @cmd NVARCHAR(4000) = N'', --Holds xp_cmdshell command
 		@LogRestoreRanking SMALLINT = 1, --Holds Log iteration # when multiple paths & backup files are being stripped
 		@LogFirstLSN NUMERIC(25, 0), --Holds first LSN in log backup headers
 		@LogLastLSN NUMERIC(25, 0), --Holds last LSN in log backup headers
+		@LogLastNameInMsdbAS NVARCHAR(MAX) = N'', -- Holds last TRN file name already restored 
 		@FileListParamSQL NVARCHAR(4000) = N'', --Holds INSERT list for #FileListParameters
 		@BackupParameters NVARCHAR(500) = N'', --Used to save BlockSize, MaxTransferSize and BufferCount
         @RestoreDatabaseID SMALLINT;    --Holds DB_ID of @RestoreDatabaseName
@@ -596,6 +598,17 @@ BEGIN
 		END;
 	END
 	/*End folder sanity check*/
+
+	IF @StopAt IS NOT NULL
+	BEGIN
+		DELETE
+		FROM @FileList
+		WHERE BackupFile LIKE N'%.bak'
+			AND
+			BackupFile LIKE N'%' + @Database + N'%'
+			AND
+			(REPLACE( RIGHT( REPLACE( BackupFile, RIGHT( BackupFile, PATINDEX( '%_[0-9][0-9]%', REVERSE( BackupFile ) ) ), '' ), 16 ), '_', '' ) > @StopAt);
+	END
 	
     -- Find latest full backup 
     SELECT @LastFullBackup = MAX(BackupFile)
@@ -1172,6 +1185,24 @@ BEGIN
 	END 
     /*End folder sanity check*/
 
+	
+IF @SkipBackupsAlreadyInMsdb = 1
+BEGIN
+	SELECT TOP 1 @LogLastNameInMsdbAS = bf.physical_device_name
+	FROM msdb.dbo.backupmediafamily bf
+	WHERE physical_device_name like @BackupPathLog + '%'
+	ORDER BY physical_device_name DESC
+	
+	IF @Debug = 1
+	BEGIN 
+		SELECT 'Keeping LOG backups with name > : ' + @LogLastNameInMsdbAS
+	END
+	
+	DELETE fl
+	FROM @FileList AS fl
+	WHERE fl.BackupPath + fl.BackupFile <= @LogLastNameInMsdbAS
+END
+
 	IF @Debug = 1
 	BEGIN 
 		SELECT * FROM @FileList WHERE BackupFile IS NOT NULL;
@@ -1388,22 +1419,29 @@ IF @RunCheckDB = 1
 
 IF @DatabaseOwner IS NOT NULL
 	BEGIN
-		IF EXISTS (SELECT * FROM master.dbo.syslogins WHERE syslogins.loginname = @DatabaseOwner)
+		IF @RunRecovery = 1
 		BEGIN
-			SET @sql = N'ALTER AUTHORIZATION ON DATABASE::' + @RestoreDatabaseName + ' TO [' + @DatabaseOwner + ']';
+			IF EXISTS (SELECT * FROM master.dbo.syslogins WHERE syslogins.loginname = @DatabaseOwner)
+			BEGIN
+				SET @sql = N'ALTER AUTHORIZATION ON DATABASE::' + @RestoreDatabaseName + ' TO [' + @DatabaseOwner + ']';
 
-				IF @Debug = 1 OR @Execute = 'N'
-				BEGIN
-					IF @sql IS NULL PRINT '@sql is NULL for Set Database Owner';
-					PRINT @sql;
-				END;
+					IF @Debug = 1 OR @Execute = 'N'
+					BEGIN
+						IF @sql IS NULL PRINT '@sql is NULL for Set Database Owner';
+						PRINT @sql;
+					END;
 
-			IF @Debug IN (0, 1) AND @Execute = 'Y'
-				EXECUTE (@sql);
+				IF @Debug IN (0, 1) AND @Execute = 'Y'
+					EXECUTE (@sql);
+			END
+			ELSE
+			BEGIN
+				PRINT @DatabaseOwner + ' is not a valid Login. Database Owner not set.';
+			END
 		END
 		ELSE
 		BEGIN
-			PRINT @DatabaseOwner + ' is not a valid Login. Database Owner not set.'
+			PRINT @RestoreDatabaseName + ' is still in Recovery, so we are unable to change the database owner to [' + @DatabaseOwner + '].';
 		END
 	END;
 

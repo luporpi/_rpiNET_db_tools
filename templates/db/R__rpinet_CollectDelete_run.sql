@@ -1,8 +1,8 @@
-IF OBJECT_ID('dbo.rpinet_CollectDelete_run_$${DatabaseName}') IS NULL
-    EXEC ('CREATE PROCEDURE dbo.rpinet_CollectDelete_run_$${DatabaseName} AS RETURN 0;');
+IF OBJECT_ID('dbo.rpinet_CollectDelete_run_$${CollectDatabaseName}') IS NULL
+    EXEC ('CREATE PROCEDURE dbo.rpinet_CollectDelete_run_$${CollectDatabaseName} AS RETURN 0;');
 GO
 
-ALTER PROCEDURE [dbo].[rpinet_CollectDelete_run_$${DatabaseName}]
+ALTER PROCEDURE [dbo].[rpinet_CollectDelete_run_$${CollectDatabaseName}]
 AS
 BEGIN
     /*

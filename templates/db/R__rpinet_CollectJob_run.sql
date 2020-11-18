@@ -1,8 +1,8 @@
-IF OBJECT_ID('dbo.rpinet_CollectJob_run_$${DatabaseName}') IS NULL
-    EXEC ('CREATE PROCEDURE dbo.rpinet_CollectJob_run_$${DatabaseName} AS RETURN 0;');
+IF OBJECT_ID('dbo.rpinet_CollectJob_run_$${CollectDatabaseName}') IS NULL
+    EXEC ('CREATE PROCEDURE dbo.rpinet_CollectJob_run_$${CollectDatabaseName} AS RETURN 0;');
 GO
 
-ALTER PROCEDURE [dbo].[rpinet_CollectJob_run_$${DatabaseName}]
+ALTER PROCEDURE [dbo].[rpinet_CollectJob_run_$${CollectDatabaseName}]
 AS
 BEGIN
     /*
@@ -23,7 +23,7 @@ BEGIN
     */
     SET @timestamp = GETDATE();
 
-    EXEC rpinet_CollectJob @DatabaseName = '$${DatabaseName}',
+    EXEC rpinet_CollectJob @DatabaseName = '$${CollectDatabaseName}',
         @Top = 100,
         @Timestamp = @timestamp,
         @MaxRunTime = 4;

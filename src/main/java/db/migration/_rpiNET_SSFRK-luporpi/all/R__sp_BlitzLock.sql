@@ -22,7 +22,8 @@ ALTER PROCEDURE dbo.sp_BlitzLock
     @VersionCheckMode BIT = 0,
 	@OutputDatabaseName NVARCHAR(256) = NULL ,
     @OutputSchemaName NVARCHAR(256) = 'dbo' ,  --ditto as below
-    @OutputTableName NVARCHAR(256) = 'BlitzLock'  --put a standard here no need to check later in the script
+    @OutputTableName NVARCHAR(256) = 'BlitzLock',  --put a standard here no need to check later in the script
+    @ExportToExcel BIT = 0
 )
 WITH RECOMPILE
 AS
@@ -31,7 +32,7 @@ BEGIN
 SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-SELECT @Version = '2.99', @VersionDate = '20200913';
+SELECT @Version = '2.9999', @VersionDate = '20201114';
 
 
 IF(@VersionCheckMode = 1)
@@ -319,12 +320,12 @@ You need to use an Azure storage account, and the path has to look like this: ht
 		ORDER BY xml.deadlock_xml.value('(/event/@timestamp)[1]', 'datetime') DESC
 		OPTION ( RECOMPILE );
 
-
 		/*Parse process and input buffer XML*/
         SET @d = CONVERT(VARCHAR(40), GETDATE(), 109);
         RAISERROR('Parse process and input buffer XML %s', 0, 1, @d) WITH NOWAIT;
         SELECT      q.event_date,
                     q.victim_id,
+					CONVERT(BIT, q.is_parallel) AS is_parallel,
                     q.deadlock_graph,
                     q.id,
                     q.database_id,
@@ -348,6 +349,7 @@ You need to use an Azure storage account, and the path has to look like this: ht
         FROM        (   SELECT      dd.deadlock_xml,
                                     CONVERT(DATETIME2(7), SWITCHOFFSET(CONVERT(datetimeoffset, dd.event_date ), DATENAME(TzOffset, SYSDATETIMEOFFSET()))) AS event_date,
                                     dd.victim_id,
+									dd.is_parallel,
                                     dd.deadlock_graph,
                                     ca.dp.value('@id', 'NVARCHAR(256)') AS id,
                                     ca.dp.value('@currentdb', 'BIGINT') AS database_id,
@@ -369,6 +371,7 @@ You need to use an Azure storage account, and the path has to look like this: ht
                         FROM        (   SELECT d1.deadlock_xml,
                                                d1.deadlock_xml.value('(event/@timestamp)[1]', 'DATETIME2') AS event_date,
                                                d1.deadlock_xml.value('(//deadlock/victim-list/victimProcess/@id)[1]', 'NVARCHAR(256)') AS victim_id,
+											   d1.deadlock_xml.exist('//deadlock/resource-list/exchangeEvent') AS is_parallel,
                                                d1.deadlock_xml.query('/event/data/value/deadlock') AS deadlock_graph
                                         FROM   #deadlock_data AS d1 ) AS dd
                         CROSS APPLY dd.deadlock_xml.nodes('//deadlock/process-list/process') AS ca(dp)
@@ -592,13 +595,13 @@ You need to use an Azure storage account, and the path has to look like this: ht
  			  ca.spilling,
  			  ca.waiting_to_close,
  	   		  w.l.value('@id', 'NVARCHAR(256)') AS waiter_id,
-               o.l.value('@id', 'NVARCHAR(256)') AS owner_id
+              o.l.value('@id', 'NVARCHAR(256)') AS owner_id
  	   INTO #deadlock_resource_parallel
  	   FROM (
         SELECT		dr.event_date,
  					ca.dr.value('@id', 'NVARCHAR(256)') AS id,
-                     ca.dr.value('@WaitType', 'NVARCHAR(256)') AS wait_type,
-                     ca.dr.value('@nodeId', 'BIGINT') AS node_id,
+                    ca.dr.value('@WaitType', 'NVARCHAR(256)') AS wait_type,
+                    ca.dr.value('@nodeId', 'BIGINT') AS node_id,
  					/* These columns are in 2017 CU5 ONLY */
  					ca.dr.value('@waiterType', 'NVARCHAR(256)') AS waiter_type,
  					ca.dr.value('@ownerActivity', 'NVARCHAR(256)') AS owner_activity,
@@ -1197,6 +1200,22 @@ You need to use an Azure storage account, and the path has to look like this: ht
         GROUP BY DB_NAME(aj.database_id), aj.job_name, aj.step_name
 		OPTION ( RECOMPILE );
 
+		/*Check 13 is total parallel deadlocks*/
+        SET @d = CONVERT(VARCHAR(40), GETDATE(), 109);
+        RAISERROR('Check 13 %s', 0, 1, @d) WITH NOWAIT;
+		INSERT #deadlock_findings WITH (TABLOCKX) 
+        ( check_id, database_name, object_name, finding_group, finding ) 	
+		SELECT 13 AS check_id, 
+			   N'-' AS database_name, 
+			   '-' AS object_name,
+			   'Total parallel deadlocks' AS finding_group,
+			   'There have been ' 
+				+ CONVERT(NVARCHAR(20), COUNT_BIG(DISTINCT drp.event_date)) 
+				+ ' parallel deadlocks.'
+        FROM   #deadlock_resource_parallel AS drp
+		WHERE 1 = 1
+		OPTION ( RECOMPILE );
+
 		/*Thank you goodnight*/
 		INSERT #deadlock_findings WITH (TABLOCKX) 
          ( check_id, database_name, object_name, finding_group, finding ) 
@@ -1273,6 +1292,7 @@ You need to use an Azure storage account, and the path has to look like this: ht
 					dp.deadlock_graph
 		     FROM   #deadlock_process AS dp 
 			 WHERE dp.victim_id IS NOT NULL
+			 AND   dp.is_parallel = 0
 			 
 			 UNION ALL
 			 
@@ -1284,7 +1304,20 @@ You need to use an Azure storage account, and the path has to look like this: ht
 		            dp.priority,
 		            dp.log_used,
 		            dp.wait_resource COLLATE DATABASE_DEFAULT,
-		            CONVERT(XML, N'parallel_deadlock' COLLATE DATABASE_DEFAULT) AS object_names,
+					CASE WHEN @ExportToExcel = 0 THEN
+						CONVERT(
+							XML,
+							STUFF(( SELECT DISTINCT NCHAR(10) 
+											+ N' <object>' 
+											+ ISNULL(c.object_name, N'') 
+											+ N'</object> ' COLLATE DATABASE_DEFAULT AS object_name
+									FROM   #deadlock_owner_waiter AS c
+									WHERE  ( dp.id = c.owner_id
+											OR dp.victim_id = c.waiter_id )
+									AND CONVERT(DATE, dp.event_date) = CONVERT(DATE, c.event_date)
+									FOR XML PATH(N''), TYPE ).value(N'.[1]', N'NVARCHAR(4000)'),
+								1, 1, N''))
+						ELSE NULL END AS object_names,
 		            dp.wait_time,
 		            dp.transaction_name,
 		            dp.last_tran_started,
@@ -1319,8 +1352,7 @@ You need to use an Azure storage account, and the path has to look like this: ht
 		     FROM   #deadlock_process AS dp 
 			 CROSS APPLY (SELECT TOP 1 * FROM  #deadlock_resource_parallel AS drp WHERE drp.owner_id = dp.id AND drp.wait_type = 'e_waitPipeNewRow' ORDER BY drp.event_date) AS cao
 			 CROSS APPLY (SELECT TOP 1 * FROM  #deadlock_resource_parallel AS drp WHERE drp.owner_id = dp.id AND drp.wait_type = 'e_waitPipeGetRow' ORDER BY drp.event_date) AS caw
-			 WHERE dp.victim_id IS NULL
-			 AND dp.login_name IS NOT NULL)
+			 WHERE dp.is_parallel = 1 )
 		insert into DeadLockTbl (
 			ServerName,
 			deadlock_type,
@@ -1440,18 +1472,20 @@ ELSE  --Output to database is not set output to client app
 						dp.priority,
 						dp.log_used,
 						dp.wait_resource COLLATE DATABASE_DEFAULT AS wait_resource,
-						CONVERT(
-							XML,
-							STUFF(( SELECT DISTINCT NCHAR(10) 
-											+ N' <object>' 
-											+ ISNULL(c.object_name, N'') 
-											+ N'</object> ' COLLATE DATABASE_DEFAULT AS object_name
-									FROM   #deadlock_owner_waiter AS c
-									WHERE  ( dp.id = c.owner_id
-									         OR dp.victim_id = c.waiter_id )
-									AND CONVERT(DATE, dp.event_date) = CONVERT(DATE, c.event_date)
-									FOR XML PATH(N''), TYPE ).value(N'.[1]', N'NVARCHAR(4000)'),
-								1, 1, N'')) AS object_names,
+						CASE WHEN @ExportToExcel = 0 THEN
+							CONVERT(
+								XML,
+								STUFF(( SELECT DISTINCT NCHAR(10) 
+												+ N' <object>' 
+												+ ISNULL(c.object_name, N'') 
+												+ N'</object> ' COLLATE DATABASE_DEFAULT AS object_name
+										FROM   #deadlock_owner_waiter AS c
+										WHERE  ( dp.id = c.owner_id
+												OR dp.victim_id = c.waiter_id )
+										AND CONVERT(DATE, dp.event_date) = CONVERT(DATE, c.event_date)
+										FOR XML PATH(N''), TYPE ).value(N'.[1]', N'NVARCHAR(4000)'),
+									1, 1, N''))
+							ELSE NULL END AS object_names,
 						dp.wait_time,
 						dp.transaction_name,
 						dp.last_tran_started,
@@ -1485,7 +1519,8 @@ ELSE  --Output to database is not set output to client app
 						dp.deadlock_graph
 				FROM   #deadlock_process AS dp 
 				WHERE dp.victim_id IS NOT NULL
-				
+				AND   dp.is_parallel = 0			
+
 				UNION ALL
 				
 				SELECT N'Parallel Deadlock' AS deadlock_type,
@@ -1496,7 +1531,20 @@ ELSE  --Output to database is not set output to client app
 						dp.priority,
 						dp.log_used,
 						dp.wait_resource COLLATE DATABASE_DEFAULT,
-						CONVERT(XML, N'parallel_deadlock' COLLATE DATABASE_DEFAULT) AS object_names,
+						CASE WHEN @ExportToExcel = 0 THEN
+							CONVERT(
+								XML,
+								STUFF(( SELECT DISTINCT NCHAR(10) 
+												+ N' <object>' 
+												+ ISNULL(c.object_name, N'') 
+												+ N'</object> ' COLLATE DATABASE_DEFAULT AS object_name
+										FROM   #deadlock_owner_waiter AS c
+										WHERE  ( dp.id = c.owner_id
+												OR dp.victim_id = c.waiter_id )
+										AND CONVERT(DATE, dp.event_date) = CONVERT(DATE, c.event_date)
+										FOR XML PATH(N''), TYPE ).value(N'.[1]', N'NVARCHAR(4000)'),
+									1, 1, N''))
+							ELSE NULL END AS object_names,
 						dp.wait_time,
 						dp.transaction_name,
 						dp.last_tran_started,
@@ -1529,10 +1577,9 @@ ELSE  --Output to database is not set output to client app
 						caw.waiting_to_close AS waiter_waiting_to_close,
 						dp.deadlock_graph
 				FROM   #deadlock_process AS dp 
-				OUTER APPLY (SELECT TOP 1 * FROM  #deadlock_resource_parallel AS drp WHERE drp.owner_id = dp.id AND drp.wait_type = 'e_waitPipeNewRow' ORDER BY drp.event_date) AS cao
-				OUTER APPLY (SELECT TOP 1 * FROM  #deadlock_resource_parallel AS drp WHERE drp.owner_id = dp.id AND drp.wait_type = 'e_waitPipeGetRow' ORDER BY drp.event_date) AS caw
-				WHERE dp.victim_id IS NULL
-				AND dp.login_name IS NOT NULL
+				OUTER APPLY (SELECT TOP 1 * FROM  #deadlock_resource_parallel AS drp WHERE drp.owner_id = dp.id AND drp.wait_type IN ('e_waitPortOpen', 'e_waitPipeNewRow') ORDER BY drp.event_date) AS cao
+				OUTER APPLY (SELECT TOP 1 * FROM  #deadlock_resource_parallel AS drp WHERE drp.owner_id = dp.id AND drp.wait_type IN ('e_waitPortOpen', 'e_waitPipeGetRow') ORDER BY drp.event_date) AS caw
+				WHERE dp.is_parallel = 1
 				)
 				SELECT d.deadlock_type,
 				d.event_date,
@@ -1543,7 +1590,8 @@ ELSE  --Output to database is not set output to client app
 				+ CASE WHEN d.qn = 0 THEN N'1' ELSE CONVERT(NVARCHAR(10), d.qn) END 
 				+ CASE WHEN d.is_victim = 1 THEN ' - VICTIM' ELSE '' END
 				AS deadlock_group, 
-				CONVERT(XML, N'<inputbuf><![CDATA[' + d.inputbuf + N']]></inputbuf>') AS query,
+				CASE WHEN @ExportToExcel = 0 THEN CONVERT(XML, N'<inputbuf><![CDATA[' + d.inputbuf + N']]></inputbuf>')  
+					ELSE SUBSTRING(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LTRIM(RTRIM(d.inputbuf)),' ','<>'),'><',''),NCHAR(10), ' '),NCHAR(13), ' '),'<>',' '), 1, 32000) END AS query,
 				d.object_names,
 				d.isolation_level,
 				d.owner_mode,
@@ -1572,7 +1620,7 @@ ELSE  --Output to database is not set output to client app
 				d.waiter_merging,
 				d.waiter_spilling,
 				d.waiter_waiting_to_close,
-				d.deadlock_graph
+				CASE WHEN @ExportToExcel = 0 THEN d.deadlock_graph ELSE NULL END AS deadlock_graph
 			FROM   deadlocks AS d
 			WHERE  d.dn = 1
 			AND (is_victim = @VictimsOnly OR @VictimsOnly = 0)

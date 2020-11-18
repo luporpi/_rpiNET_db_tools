@@ -22,13 +22,14 @@ ALTER PROCEDURE dbo.sp_BlitzWho
 	@CheckDateOverride DATETIMEOFFSET = NULL,
 	@Version     VARCHAR(30) = NULL OUTPUT,
 	@VersionDate DATETIME = NULL OUTPUT,
-    @VersionCheckMode BIT = 0
+    @VersionCheckMode BIT = 0,
+	@SortOrder NVARCHAR(256) = N'elapsed time'
 AS
 BEGIN
 	SET NOCOUNT ON;
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	
-	SELECT @Version = '7.99', @VersionDate = '20200913';
+	SELECT @Version = '7.9999', @VersionDate = '20201114';
     
 	IF(@VersionCheckMode = 1)
 	BEGIN
@@ -113,6 +114,8 @@ DECLARE  @ProductVersion NVARCHAR(128)
 		,@OutputTableNameQueryStats_View NVARCHAR(256)
 		,@LineFeed NVARCHAR(MAX) /* Had to set as MAX up from 10 as it was truncating the view creation*/;
 
+/* Let's get @SortOrder set to lower case here for comparisons later */
+SET @SortOrder = REPLACE(LOWER(@SortOrder), N' ', N'_');
 
 SET @ProductVersion = CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR(128));
 SELECT @ProductVersionMajor = SUBSTRING(@ProductVersion, 1,CHARINDEX('.', @ProductVersion) + 1 ),
@@ -522,6 +525,21 @@ IF @OutputDatabaseName IS NOT NULL AND @OutputSchemaName IS NOT NULL AND @Output
 
  END
 
+ IF OBJECT_ID('tempdb..#WhoReadableDBs') IS NOT NULL 
+	DROP TABLE #WhoReadableDBs;
+
+CREATE TABLE #WhoReadableDBs 
+(
+database_id INT
+);
+
+IF EXISTS (SELECT * FROM sys.all_objects o WHERE o.name = 'dm_hadr_database_replica_states')
+BEGIN
+	RAISERROR('Checking for Read intent databases to exclude',0,0) WITH NOWAIT;
+
+	EXEC('INSERT INTO #WhoReadableDBs (database_id) SELECT DBs.database_id FROM sys.databases DBs INNER JOIN sys.availability_replicas Replicas ON DBs.replica_id = Replicas.replica_id WHERE replica_server_name NOT IN (SELECT DISTINCT primary_replica FROM sys.dm_hadr_availability_group_states States) AND Replicas.secondary_role_allow_connections_desc = ''READ_ONLY'' AND replica_server_name = @@SERVERNAME;');
+END
+
 SELECT @BlockingCheck = N'SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
    
 						DECLARE @blocked TABLE 
@@ -552,7 +570,7 @@ BEGIN
     /* Think of the StringToExecute as starting with this, but we'll set this up later depending on whether we're doing an insert or a select:
     SELECT @StringToExecute = N'SELECT  GETDATE() AS run_date ,
     */
-    SET @StringToExecute = N'COALESCE( CONVERT(VARCHAR(20), (ABS(r.total_elapsed_time) / 1000) / 86400) + '':'' + CONVERT(VARCHAR(20), (DATEADD(SECOND, (r.total_elapsed_time / 1000), 0) + DATEADD(MILLISECOND, (r.total_elapsed_time % 1000), 0)), 114), CONVERT(VARCHAR(20), DATEDIFF(SECOND, s.last_request_start_time, GETDATE()) / 86400) + '':'' + CONVERT(VARCHAR(20), DATEADD(SECOND, DATEDIFF(SECOND, s.last_request_start_time, GETDATE()), 0), 114) ) AS [elapsed_time] ,
+    SET @StringToExecute = N'COALESCE( RIGHT(''00'' + CONVERT(VARCHAR(20), (ABS(r.total_elapsed_time) / 1000) / 86400), 2) + '':'' + CONVERT(VARCHAR(20), (DATEADD(SECOND, (r.total_elapsed_time / 1000), 0) + DATEADD(MILLISECOND, (r.total_elapsed_time % 1000), 0)), 114), CONVERT(VARCHAR(20), DATEDIFF(SECOND, s.last_request_start_time, GETDATE()) / 86400) + '':'' + CONVERT(VARCHAR(20), DATEADD(SECOND, DATEDIFF(SECOND, s.last_request_start_time, GETDATE()), 0), 114) ) AS [elapsed_time] ,
 			       s.session_id ,
 						    COALESCE(DB_NAME(r.database_id), DB_NAME(blocked.dbid), ''N/A'') AS database_name,
 			       ISNULL(SUBSTRING(dest.text,
@@ -757,7 +775,7 @@ IF @ProductVersionMajor >= 11
     /* Think of the StringToExecute as starting with this, but we'll set this up later depending on whether we're doing an insert or a select:
     SELECT @StringToExecute = N'SELECT  GETDATE() AS run_date ,
     */
-    SELECT @StringToExecute = N'COALESCE( CONVERT(VARCHAR(20), (ABS(r.total_elapsed_time) / 1000) / 86400) + '':'' + CONVERT(VARCHAR(20), (DATEADD(SECOND, (r.total_elapsed_time / 1000), 0) + DATEADD(MILLISECOND, (r.total_elapsed_time % 1000), 0)), 114), CONVERT(VARCHAR(20), DATEDIFF(SECOND, s.last_request_start_time, GETDATE()) / 86400) + '':'' + CONVERT(VARCHAR(20), DATEADD(SECOND, DATEDIFF(SECOND, s.last_request_start_time, GETDATE()), 0), 114) ) AS [elapsed_time] ,
+    SELECT @StringToExecute = N'COALESCE( RIGHT(''00'' + CONVERT(VARCHAR(20), (ABS(r.total_elapsed_time) / 1000) / 86400), 2) + '':'' + CONVERT(VARCHAR(20), (DATEADD(SECOND, (r.total_elapsed_time / 1000), 0) + DATEADD(MILLISECOND, (r.total_elapsed_time % 1000), 0)), 114), CONVERT(VARCHAR(20), DATEDIFF(SECOND, s.last_request_start_time, GETDATE()) / 86400) + '':'' + CONVERT(VARCHAR(20), DATEADD(SECOND, DATEDIFF(SECOND, s.last_request_start_time, GETDATE()), 0), 114) ) AS [elapsed_time] ,
 			       s.session_id ,
 						    COALESCE(DB_NAME(r.database_id), DB_NAME(blocked.dbid), ''N/A'') AS database_name,
 			       ISNULL(SUBSTRING(dest.text,
@@ -996,6 +1014,7 @@ IF @ProductVersionMajor >= 11
 	    N'
 	    WHERE s.session_id <> @@SPID 
 	    AND s.host_name IS NOT NULL
+		AND r.database_id NOT IN (SELECT database_id FROM #WhoReadableDBs)
 	    '
 	    + CASE WHEN @ShowSleepingSPIDs = 0 THEN
 			    N' AND COALESCE(DB_NAME(r.database_id), DB_NAME(blocked.dbid)) IS NOT NULL'
@@ -1030,9 +1049,37 @@ IF (@MinElapsedSeconds + @MinCPUTime + @MinLogicalReads + @MinPhysicalReads + @M
 	SET @StringToExecute += N' ) ';
 	END
 
-SET @StringToExecute += 	
-	N' ORDER BY 2 DESC
-	';
+SET @StringToExecute +=
+		N' ORDER BY ' + CASE	WHEN @SortOrder = 'session_id'		THEN '[session_id] DESC'
+								WHEN @SortOrder = 'query_cost'		THEN '[query_cost] DESC'
+								WHEN @SortOrder = 'database_name'		THEN '[database_name] ASC'
+								WHEN @SortOrder = 'open_transaction_count'		THEN '[open_transaction_count] DESC'
+								WHEN @SortOrder = 'is_implicit_transaction'		THEN '[is_implicit_transaction] DESC'
+								WHEN @SortOrder = 'login_name'		THEN '[login_name] ASC'
+								WHEN @SortOrder = 'program_name'		THEN '[program_name] ASC'
+								WHEN @SortOrder = 'client_interface_name'		THEN '[client_interface_name] ASC'
+								WHEN @SortOrder = 'request_cpu_time'		THEN 'COALESCE(r.cpu_time, s.cpu_time) DESC'
+								WHEN @SortOrder = 'request_logical_reads'		THEN 'COALESCE(r.logical_reads, s.logical_reads) DESC'
+								WHEN @SortOrder = 'request_writes'		THEN 'COALESCE(r.writes, s.writes) DESC'
+								WHEN @SortOrder = 'request_physical_reads'		THEN 'COALESCE(r.reads, s.reads) DESC '
+								WHEN @SortOrder = 'session_cpu'		THEN 's.cpu_time DESC'
+								WHEN @SortOrder = 'session_logical_reads'		THEN 's.logical_reads DESC'
+								WHEN @SortOrder = 'session_physical_reads'		THEN 's.reads DESC'
+								WHEN @SortOrder = 'session_writes'		THEN 's.writes DESC'
+								WHEN @SortOrder = 'tempdb_allocations_mb'		THEN '[tempdb_allocations_mb] DESC'
+								WHEN @SortOrder = 'memory_usage'		THEN '[memory_usage] DESC'
+								WHEN @SortOrder = 'deadlock_priority'		THEN 'r.deadlock_priority DESC'
+								WHEN @SortOrder = 'transaction_isolation_level'		THEN 'r.[transaction_isolation_level] DESC'
+								WHEN @SortOrder = 'requested_memory_kb' THEN '[requested_memory_kb] DESC'
+								WHEN @SortOrder = 'grant_memory_kb' THEN 'qmg.granted_memory_kb DESC'
+								WHEN @SortOrder = 'grant' THEN 'qmg.granted_memory_kb DESC'
+								WHEN @SortOrder = 'query_memory_grant_used_memory_kb' THEN 'qmg.used_memory_kb DESC'
+								WHEN @SortOrder = 'ideal_memory_kb' THEN '[ideal_memory_kb] DESC'
+								WHEN @SortOrder = 'workload_group_name' THEN 'wg.name ASC'
+								WHEN @SortOrder = 'resource_pool_name' THEN 'rp.name ASC'
+								ELSE '[elapsed_time] DESC'
+						END + '
+		';
 
 
 IF @OutputDatabaseName IS NOT NULL AND @OutputSchemaName IS NOT NULL AND @OutputTableName IS NOT NULL

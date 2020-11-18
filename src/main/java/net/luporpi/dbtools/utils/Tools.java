@@ -37,8 +37,8 @@ public final class Tools {
                 connectionProperties.getOrDefault("database.user", "")));
         flywayProperties.setProperty("flyway.password", (String) flywayProperties.getOrDefault("flyway.password",
                 connectionProperties.getOrDefault("database.password", "")));
-        flywayProperties.setProperty("flyway.placeholders.DatabaseName",
-                (String) flywayProperties.getOrDefault("flyway.placeholders.DatabaseName",
+        flywayProperties.setProperty("flyway.placeholders.CollectDatabaseName",
+                (String) flywayProperties.getOrDefault("flyway.placeholders.CollectDatabaseName",
                         connectionProperties.getOrDefault("database.database", "")));
         flywayProperties.setProperty("flyway.placeholders.OutputDatabaseName",
                 (String) flywayProperties.getOrDefault("flyway.placeholders.OutputDatabaseName",

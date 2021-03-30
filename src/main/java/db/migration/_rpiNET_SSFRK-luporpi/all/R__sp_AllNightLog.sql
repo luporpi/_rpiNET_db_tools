@@ -30,7 +30,7 @@ SET NOCOUNT ON;
 BEGIN;
 
 
-SELECT @Version = '3.9999', @VersionDate = '20201211';
+SELECT @Version = '8.02', @VersionDate = '20210322';
 
 IF(@VersionCheckMode = 1)
 BEGIN
@@ -82,7 +82,7 @@ BEGIN
 	
 	    MIT License
 		
-		Copyright (c) 2020 Brent Ozar Unlimited
+		Copyright (c) 2021 Brent Ozar Unlimited
 	
 		Permission is hereby granted, free of charge, to any person obtaining a copy
 		of this software and associated documentation files (the "Software"), to deal
@@ -361,7 +361,7 @@ Pollster:
 							SELECT 1
 							FROM msdbCentral.dbo.backup_worker bw WITH (READPAST)
 							WHERE bw.last_log_backup_finish_time < '99991231'
-							AND bw.last_log_backup_start_time < DATEADD(MINUTE, -5, GETDATE())				
+							AND bw.last_log_backup_start_time < DATEADD(SECOND, (@rpo * -1), GETDATE())				
 							AND EXISTS (
 									SELECT 1
 									FROM msdb.dbo.backupset b
@@ -381,7 +381,7 @@ Pollster:
 												bw.last_log_backup_start_time = '19000101'
 									FROM msdbCentral.dbo.backup_worker bw
 									WHERE bw.last_log_backup_finish_time < '99991231'
-									AND bw.last_log_backup_start_time < DATEADD(MINUTE, -5, GETDATE())
+									AND bw.last_log_backup_start_time < DATEADD(SECOND, (@rpo * -1), GETDATE())
 									AND EXISTS (
 											SELECT 1
 											FROM msdb.dbo.backupset b
@@ -595,7 +595,7 @@ DiskPollster:
 							SELECT 1
 							FROM msdb.dbo.restore_worker rw WITH (READPAST)
 							WHERE rw.last_log_restore_finish_time < '99991231'
-							AND rw.last_log_restore_start_time < DATEADD(MINUTE, -5, GETDATE())				
+							AND rw.last_log_restore_start_time < DATEADD(SECOND, (@rto * -1), GETDATE())			
 							AND EXISTS (
 									SELECT 1
 									FROM msdb.dbo.restorehistory r
@@ -615,7 +615,7 @@ DiskPollster:
 												rw.last_log_restore_start_time = '19000101'
 									FROM msdb.dbo.restore_worker rw
 									WHERE rw.last_log_restore_finish_time < '99991231'
-									AND rw.last_log_restore_start_time < DATEADD(MINUTE, -5, GETDATE())
+									AND rw.last_log_restore_start_time < DATEADD(SECOND, (@rto * -1), GETDATE())
 									AND EXISTS (
 											SELECT 1
 											FROM msdb.dbo.restorehistory r

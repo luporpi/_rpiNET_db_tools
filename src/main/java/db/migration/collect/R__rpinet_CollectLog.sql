@@ -15,8 +15,8 @@ BEGIN
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-    SELECT @Version = '4.0.8',
-        @VersionDate = '20210330';
+    SELECT @Version = '4.0.9',
+        @VersionDate = '20210731';
 
     IF (@VersionCheckMode = 1)
     BEGIN

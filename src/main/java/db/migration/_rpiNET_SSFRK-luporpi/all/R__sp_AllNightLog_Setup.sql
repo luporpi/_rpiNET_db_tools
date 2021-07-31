@@ -33,10 +33,11 @@ ALTER PROCEDURE dbo.sp_AllNightLog_Setup
 WITH RECOMPILE
 AS
 SET NOCOUNT ON;
+SET STATISTICS XML OFF;
 
 BEGIN;
 
-SELECT @Version = '8.02', @VersionDate = '20210322';
+SELECT @Version = '8.05', @VersionDate = '20210725';
 
 IF(@VersionCheckMode = 1)
 BEGIN

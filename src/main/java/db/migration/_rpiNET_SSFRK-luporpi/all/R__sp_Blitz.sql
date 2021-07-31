@@ -34,10 +34,11 @@ ALTER PROCEDURE [dbo].[sp_Blitz]
 WITH RECOMPILE
 AS
     SET NOCOUNT ON;
+	SET STATISTICS XML OFF;
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	
 
-	SELECT @Version = '8.02', @VersionDate = '20210322';
+	SELECT @Version = '8.05', @VersionDate = '20210725';
 	SET @OutputType = UPPER(@OutputType);
 
     IF(@VersionCheckMode = 1)
@@ -355,7 +356,7 @@ AS
 					SET @StringToExecute += QUOTENAME(@SkipChecksServer) + N'.';
 					END
 				SET @StringToExecute += QUOTENAME(@SkipChecksDatabase) + N'.' + QUOTENAME(@SkipChecksSchema) + N'.' + QUOTENAME(@SkipChecksTable)
-					+ N' WHERE ServerName IS NULL OR ServerName = SERVERPROPERTY(''ServerName'') OPTION (RECOMPILE);';
+					+ N' WHERE ServerName IS NULL OR ServerName = CAST(SERVERPROPERTY(''ServerName'') AS NVARCHAR(128)) OPTION (RECOMPILE);';
 				EXEC(@StringToExecute);
 			END;
 
@@ -428,33 +429,38 @@ AS
 		   AND db_id('rdsadmin') IS NOT NULL
 		   AND EXISTS(SELECT * FROM master.sys.all_objects WHERE name IN ('rds_startup_tasks', 'rds_help_revlogin', 'rds_hexadecimal', 'rds_failover_tracking', 'rds_database_tracking', 'rds_track_change'))
 			BEGIN
-						INSERT INTO #SkipChecks (CheckID) VALUES (6);
-						INSERT INTO #SkipChecks (CheckID) VALUES (29);
-						INSERT INTO #SkipChecks (CheckID) VALUES (30);
-						INSERT INTO #SkipChecks (CheckID) VALUES (31);
-						INSERT INTO #SkipChecks (CheckID) VALUES (40); /* TempDB only has one data file */
-						INSERT INTO #SkipChecks (CheckID) VALUES (57);
-						INSERT INTO #SkipChecks (CheckID) VALUES (59);
-						INSERT INTO #SkipChecks (CheckID) VALUES (61);
-						INSERT INTO #SkipChecks (CheckID) VALUES (62);
-						INSERT INTO #SkipChecks (CheckID) VALUES (68);
-						INSERT INTO #SkipChecks (CheckID) VALUES (69);
-						INSERT INTO #SkipChecks (CheckID) VALUES (73);
-						INSERT INTO #SkipChecks (CheckID) VALUES (79);
-						INSERT INTO #SkipChecks (CheckID) VALUES (92);
-						INSERT INTO #SkipChecks (CheckID) VALUES (94);
-						INSERT INTO #SkipChecks (CheckID) VALUES (96);
-						INSERT INTO #SkipChecks (CheckID) VALUES (98);
+						INSERT INTO #SkipChecks (CheckID) VALUES (6); /* Security - Jobs Owned By Users per https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/issues/1919 */
+						INSERT INTO #SkipChecks (CheckID) VALUES (29); /* tables in model database created by users - not allowed */
+						INSERT INTO #SkipChecks (CheckID) VALUES (40); /* TempDB only has one data file in RDS */
+						INSERT INTO #SkipChecks (CheckID) VALUES (62); /* Database compatibility level - cannot change in RDS */
+						INSERT INTO #SkipChecks (CheckID) VALUES (68); /*Check for the last good DBCC CHECKDB date - can't run DBCC DBINFO() */
+						INSERT INTO #SkipChecks (CheckID) VALUES (69); /* High VLF check - requires DBCC LOGINFO permission */
+						INSERT INTO #SkipChecks (CheckID) VALUES (73); /* No Failsafe Operator Configured check */
+						INSERT INTO #SkipChecks (CheckID) VALUES (92); /* Drive info check - requires xp_Fixeddrives permission */
 						INSERT INTO #SkipChecks (CheckID) VALUES (100); /* Remote DAC disabled */
-						INSERT INTO #SkipChecks (CheckID) VALUES (123);
-						INSERT INTO #SkipChecks (CheckID) VALUES (177);
-						INSERT INTO #SkipChecks (CheckID) VALUES (180); /* 180/181 are maintenance plans */
-						INSERT INTO #SkipChecks (CheckID) VALUES (181);
-						INSERT INTO #SkipChecks (CheckID) VALUES (184); /* xp_readerrorlog checking for IFI */
-						INSERT INTO #SkipChecks (CheckID) VALUES (211); /* xp_regread checking for power saving */
-						INSERT INTO #SkipChecks (CheckID) VALUES (212); /* xp_regread */
-						INSERT INTO #SkipChecks (CheckID) VALUES (219);
+						INSERT INTO #SkipChecks (CheckID) VALUES (177); /* Disabled Internal Monitoring Features check - requires dm_server_registry access */
+						INSERT INTO #SkipChecks (CheckID) VALUES (180); /* 180/181 are maintenance plans checks - Maint plans not available in RDS*/
+						INSERT INTO #SkipChecks (CheckID) VALUES (181); /*Find repetitive maintenance tasks*/
+
+						-- can check errorlog using rdsadmin.dbo.rds_read_error_log, so allow this check
+						--INSERT INTO #SkipChecks (CheckID) VALUES (193); /* xp_readerrorlog checking for IFI */
+
+						INSERT INTO #SkipChecks (CheckID) VALUES (211); /* xp_regread not allowed - checking for power saving */
+						INSERT INTO #SkipChecks (CheckID) VALUES (212); /* xp_regread not allowed - checking for additional instances */
 						INSERT INTO #SkipChecks (CheckID) VALUES (2301); /* sp_validatelogins called by Invalid login defined with Windows Authentication */
+
+						-- Following are skipped due to limited permissions in msdb/SQLAgent in RDS
+						INSERT INTO #SkipChecks (CheckID) VALUES (30); /* SQL Server Agent alerts not configured */
+						INSERT INTO #SkipChecks (CheckID) VALUES (31); /* check whether we have NO ENABLED operators */
+						INSERT INTO #SkipChecks (CheckID) VALUES (57); /* SQL Agent Job Runs at Startup */
+						INSERT INTO #SkipChecks (CheckID) VALUES (59); /* Alerts Configured without Follow Up */
+						INSERT INTO #SkipChecks (CheckID) VALUES (61); /*SQL Server Agent alerts do not exist for severity levels 19 through 25*/
+						INSERT INTO #SkipChecks (CheckID) VALUES (79); /* Shrink Database Job check */
+						INSERT INTO #SkipChecks (CheckID) VALUES (94); /* job failure without operator notification check */
+						INSERT INTO #SkipChecks (CheckID) VALUES (96); /* Agent alerts for corruption */
+						INSERT INTO #SkipChecks (CheckID) VALUES (98); /* check for disabled alerts */
+						INSERT INTO #SkipChecks (CheckID) VALUES (123); /* Agent Jobs Starting Simultaneously */
+						INSERT INTO #SkipChecks (CheckID) VALUES (219); /* check for alerts that do NOT include event descriptions in their outputs via email/pager/net-send */
 			            INSERT  INTO #BlitzResults
 			            ( CheckID ,
 				            Priority ,
@@ -634,8 +640,8 @@ AS
 			DROP TABLE #driveInfo;
 		CREATE TABLE #driveInfo
 			(
-			  drive NVARCHAR,
-              logical_volume_name NVARCHAR(32), --Limit is 32 for NTFS, 11 for FAT
+			  drive NVARCHAR(2),
+              logical_volume_name NVARCHAR(36), --Limit is 32 for NTFS, 11 for FAT
 			  available_MB DECIMAL(18, 0),
               total_MB DECIMAL(18, 0),
               used_percent DECIMAL(18, 2)
@@ -3248,11 +3254,6 @@ AS
 										'The job ' + [name]
 										+ ' has not been set up to notify an operator if it fails.' AS Details
 								FROM    msdb.[dbo].[sysjobs] j
-										INNER JOIN ( SELECT DISTINCT
-															[job_id]
-													 FROM   [msdb].[dbo].[sysjobschedules]
-													 WHERE  next_run_date > 0
-												   ) s ON j.job_id = s.job_id
 								WHERE   j.enabled = 1
 										AND j.notify_email_operator_id = 0
 										AND j.notify_netsend_operator_id = 0
@@ -3632,8 +3633,8 @@ AS
 								BEGIN
 								
 								SET @user_perm_sql += N'
-									SELECT @user_perm_gb = CASE WHEN (pages_kb / 128.0 / 1024.) >= 2.
-											THEN CONVERT(DECIMAL(38, 2), (pages_kb / 128.0 / 1024.))
+									SELECT @user_perm_gb = CASE WHEN (pages_kb / 1024. / 1024.) >= 2.
+											THEN CONVERT(DECIMAL(38, 2), (pages_kb / 1024. / 1024.))
 											ELSE NULL 
 										   END
 									FROM sys.dm_os_memory_clerks
@@ -4311,10 +4312,10 @@ AS
 						  SELECT 'containment', 0, 141, 210, 'Containment Enabled', 'https://www.brentozar.com/go/dbdefaults', NULL
 						  FROM sys.all_columns
 						  WHERE name = 'containment' AND object_id = OBJECT_ID('sys.databases');
-						INSERT INTO #DatabaseDefaults
-						  SELECT 'target_recovery_time_in_seconds', 0, 142, 210, 'Target Recovery Time Changed', 'https://www.brentozar.com/go/dbdefaults', NULL
-						  FROM sys.all_columns
-						  WHERE name = 'target_recovery_time_in_seconds' AND object_id = OBJECT_ID('sys.databases');
+						--INSERT INTO #DatabaseDefaults
+						--  SELECT 'target_recovery_time_in_seconds', 0, 142, 210, 'Target Recovery Time Changed', 'https://www.brentozar.com/go/dbdefaults', NULL
+						--  FROM sys.all_columns
+						--  WHERE name = 'target_recovery_time_in_seconds' AND object_id = OBJECT_ID('sys.databases');
 						INSERT INTO #DatabaseDefaults
 						  SELECT 'delayed_durability', 0, 143, 210, 'Delayed Durability Enabled', 'https://www.brentozar.com/go/dbdefaults', NULL
 						  FROM sys.all_columns
@@ -4358,6 +4359,79 @@ AS
 
 						CLOSE DatabaseDefaultsLoop;
 						DEALLOCATE DatabaseDefaultsLoop;
+
+/* Check if target recovery interval <> 60 */
+IF
+    @ProductVersionMajor >= 10
+    AND NOT EXISTS
+        (
+            SELECT
+                1/0
+            FROM  #SkipChecks AS sc
+            WHERE sc.DatabaseName IS NULL
+            AND   sc.CheckID = 257
+        )
+    BEGIN
+        IF EXISTS
+           (
+               SELECT
+                   1/0
+               FROM sys.all_columns AS ac
+               WHERE ac.name = 'target_recovery_time_in_seconds'
+               AND   ac.object_id = OBJECT_ID('sys.databases')
+           )
+           BEGIN
+               IF @Debug IN (1, 2) RAISERROR('Running CheckId [%d].', 0, 1, 257) WITH NOWAIT;
+        
+               DECLARE
+                   @tri nvarchar(max) = N'
+                   SELECT
+                       DatabaseName = 
+                           d.name,
+                       CheckId = 
+                           257,
+                       Priority = 
+                           50,
+                       FindingsGroup = 
+                           N''Performance'',
+                       Finding =
+                           N''Recovery Interval Not Optimal'',
+                       URL = 
+                           N''https://sqlperformance.com/2020/05/system-configuration/0-to-60-switching-to-indirect-checkpoints'',
+                       Details = 
+                           N''The database '' +
+                           QUOTENAME(d.name) +
+                           N'' has a target recovery interval of '' +
+                           RTRIM(d.target_recovery_time_in_seconds) + 
+                           CASE
+                               WHEN d.target_recovery_time_in_seconds = 0
+                               THEN N'', which is a legacy default, and should be changed to 60.''
+                               WHEN d.target_recovery_time_in_seconds <> 0 
+                               THEN N'', which is probably a mistake, and should be changed to 60.''
+                           END
+                   FROM sys.databases AS d
+                   WHERE d.database_id > 4
+                   AND   d.is_read_only = 0
+                   AND   d.is_in_standby = 0
+                   AND   d.target_recovery_time_in_seconds <> 60;
+                   ';
+
+               INSERT INTO
+			       #BlitzResults
+               (
+			       DatabaseName,
+			       CheckID,
+                   Priority,
+                   FindingsGroup,
+                   Finding,
+                   URL,
+                   Details
+               )
+               EXEC sys.sp_executesql
+                   @tri;
+
+            END;
+        END;
 							
 
 /*This checks to see if Agent is Offline*/
@@ -4463,7 +4537,7 @@ IF @ProductVersionMajor >= 10
 							'Informational' AS [FindingsGroup] ,
 							'SQL Server is running under an NT Service account' AS [Finding] ,
 							'https://www.brentozar.com/go/setup' AS [URL] ,
-							( 'I''m running as ' + [service_account] + '. I wish I had an Active Directory service account instead.'
+							( 'I''m running as ' + [service_account] + '.'
 							   ) AS [Details]
 						  FROM
 							[sys].[dm_server_services]
@@ -4503,7 +4577,7 @@ IF @ProductVersionMajor >= 10
 							'Informational' AS [FindingsGroup] ,
 							'SQL Server Agent is running under an NT Service account' AS [Finding] ,
 							'https://www.brentozar.com/go/setup' AS [URL] ,
-							( 'I''m running as ' + [service_account] + '. I wish I had an Active Directory service account instead.'
+							( 'I''m running as ' + [service_account] + '.'
 							   ) AS [Details]
 						  FROM
 							[sys].[dm_server_services]
@@ -6084,7 +6158,7 @@ IF @ProductVersionMajor >= 10
 							END;
 
 						
-						IF @ProductVersionMajor >= 13 AND @ProductVersionMinor < 2149 --CU1 has the fix in it
+						IF @ProductVersionMajor = 13 AND @ProductVersionMinor < 2149 --2016 CU1 has the fix in it
 							AND NOT EXISTS ( SELECT  1
 											 FROM    #SkipChecks
 											 WHERE   DatabaseName IS NULL AND CheckID = 182 )
@@ -8130,16 +8204,30 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 			*/
 					IF NOT EXISTS ( SELECT  1
 									FROM    #SkipChecks
-									WHERE   DatabaseName IS NULL AND CheckID = 184 )
-							AND (@ProductVersionMajor >= 13) OR (@ProductVersionMajor = 12 AND @ProductVersionMinor >= 5000)
+									WHERE   DatabaseName IS NULL AND CheckID = 193 )
+							AND ((@ProductVersionMajor >= 13) OR (@ProductVersionMajor = 12 AND @ProductVersionMinor >= 5000))
 						BEGIN
 							
-							IF @Debug IN (1, 2) RAISERROR('Running CheckId [%d].', 0, 1, 184) WITH NOWAIT;
+							IF @Debug IN (1, 2) RAISERROR('Running CheckId [%d].', 0, 1, 193) WITH NOWAIT;
 							
-							INSERT INTO #ErrorLog
-							EXEC sys.xp_readerrorlog 0, 1, N'Database Instant File Initialization: enabled';
+							-- If this is Amazon RDS, use rdsadmin.dbo.rds_read_error_log
+							IF LEFT(CAST(SERVERPROPERTY('ComputerNamePhysicalNetBIOS') AS VARCHAR(8000)), 8) = 'EC2AMAZ-'
+							   AND LEFT(CAST(SERVERPROPERTY('MachineName') AS VARCHAR(8000)), 8) = 'EC2AMAZ-'
+							   AND LEFT(CAST(SERVERPROPERTY('ServerName') AS VARCHAR(8000)), 8) = 'EC2AMAZ-'
+							   AND db_id('rdsadmin') IS NOT NULL
+							   AND EXISTS(SELECT * FROM master.sys.all_objects WHERE name IN ('rds_startup_tasks', 'rds_help_revlogin', 'rds_hexadecimal', 'rds_failover_tracking', 'rds_database_tracking', 'rds_track_change'))
+								BEGIN
+								INSERT INTO #ErrorLog
+								EXEC rdsadmin.dbo.rds_read_error_log 0, 1, N'Database Instant File Initialization: enabled';
+								END
+							ELSE
+								BEGIN
+								INSERT INTO #ErrorLog
+								EXEC sys.xp_readerrorlog 0, 1, N'Database Instant File Initialization: enabled';
+								END
 
 							IF @@ROWCOUNT > 0
+								begin
 								INSERT  INTO #BlitzResults
 										( CheckID ,
 										  [Priority] ,
@@ -8155,6 +8243,39 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 												'Instant File Initialization Enabled' AS [Finding] ,
 												'https://www.brentozar.com/go/instant' AS [URL] ,
 												'The service account has the Perform Volume Maintenance Tasks permission.';
+								end
+							else -- if version of sql server has instant_file_initialization_enabled column in dm_server_services, check that too
+							     --  in the event the error log has been cycled and the startup messages are not in the current error log
+								begin
+								if EXISTS ( SELECT  *
+												FROM    sys.all_objects o
+														INNER JOIN sys.all_columns c ON o.object_id = c.object_id
+												WHERE   o.name = 'dm_server_services'
+														AND c.name = 'instant_file_initialization_enabled' )
+									begin
+									SET @StringToExecute = N'
+									INSERT  INTO #BlitzResults
+											( CheckID ,
+											  [Priority] ,
+											  FindingsGroup ,
+											  Finding ,
+											  URL ,
+											  Details
+											)
+											SELECT
+													193 AS [CheckID] ,
+													250 AS [Priority] ,
+													''Server Info'' AS [FindingsGroup] ,
+													''Instant File Initialization Enabled'' AS [Finding] ,
+													''https://www.brentozar.com/go/instant'' AS [URL] ,
+													''The service account has the Perform Volume Maintenance Tasks permission.''
+											where exists (select 1 FROM sys.dm_server_services
+											               WHERE instant_file_initialization_enabled = ''Y''
+											               AND filename LIKE ''%sqlservr.exe%'')
+											OPTION (RECOMPILE);';
+									EXEC(@StringToExecute);
+									end;
+								end;
 						END;
 
 			/* Server Info - Instant File Initialization Not Enabled - Check 192 - SQL Server 2016 SP1 and newer */
@@ -8404,10 +8525,10 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 									inner join (
 												SELECT DISTINCT
 													SUBSTRING(volume_mount_point, 1, 1) AS volume_mount_point
-													,CASE WHEN ISNULL(logical_volume_name,'''') = '''' THEN '''' ELSE '' ('' + logical_volume_name + '')'' END AS logical_volume_name
+													,CASE WHEN ISNULL(logical_volume_name,'''') = '''' THEN '''' ELSE ''('' + logical_volume_name + '')'' END AS logical_volume_name
 													,total_bytes/1024/1024 AS total_MB
 													,available_bytes/1024/1024 AS available_MB
-													,(CONVERT(DECIMAL(4,2),(total_bytes/1.0 - available_bytes)/total_bytes * 100))  AS used_percent
+													,(CONVERT(DECIMAL(5,2),(total_bytes/1.0 - available_bytes)/total_bytes * 100))  AS used_percent
 												FROM
 													(SELECT TOP 1 WITH TIES 
 														database_id
@@ -8441,7 +8562,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 													+ '' drive''
 													ELSE CAST(CAST(i.available_MB/1024 AS NUMERIC(18,2)) AS VARCHAR(30))
 													+ '' GB free on '' + i.drive
-													+ '' drive'' + i.logical_volume_name
+													+ '' drive '' + i.logical_volume_name
 													+ '' out of '' + CAST(CAST(i.total_MB/1024 AS NUMERIC(18,2)) AS VARCHAR(30))
 													+ '' GB total ('' + CAST(i.used_percent AS VARCHAR(30)) + ''%)'' END
 												 AS Details
@@ -8981,7 +9102,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 					IF (OBJECT_ID('tempdb..##BlitzResults', 'U') IS NOT NULL) DROP TABLE ##BlitzResults;
 					SELECT * INTO ##BlitzResults FROM #BlitzResults;
 					SET @query_result_separator = char(9);
-					SET @StringToExecute = 'SET NOCOUNT ON;SELECT [Priority] , [FindingsGroup] , [Finding] , [DatabaseName] , [URL] ,  [Details] , CheckID FROM ##BlitzResults ORDER BY Priority , FindingsGroup, Finding, Details; SET NOCOUNT OFF;';
+					SET @StringToExecute = 'SET NOCOUNT ON;SELECT [Priority] , [FindingsGroup] , [Finding] , [DatabaseName] , [URL] ,  [Details] , CheckID FROM ##BlitzResults ORDER BY Priority , FindingsGroup , Finding , DatabaseName , Details; SET NOCOUNT OFF;';
 					SET @EmailSubject = 'sp_Blitz Results for ' + @@SERVERNAME;
 					SET @EmailBody = 'sp_Blitz ' + CAST(CONVERT(DATETIME, @VersionDate, 102) AS VARCHAR(100)) + '. http://FirstResponderKit.org';
 					IF @EmailProfile IS NULL
@@ -9126,7 +9247,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 								+ @OutputTableName
 								+ ' (ServerName, CheckDate, CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered) SELECT '''
 								+ CAST(SERVERPROPERTY('ServerName') AS NVARCHAR(128))
-								+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, CAST(QueryPlan AS NVARCHAR(MAX)), QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , Details';
+								+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, CAST(QueryPlan AS NVARCHAR(MAX)), QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , DatabaseName , Details';
 
 								EXEC(@StringToExecute);
 							END;
@@ -9143,7 +9264,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 								+ @OutputTableName
 								+ ' (ServerName, CheckDate, CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered) SELECT '''
 								+ CAST(SERVERPROPERTY('ServerName') AS NVARCHAR(128))
-								+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, CAST(QueryPlan AS NVARCHAR(MAX)), QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , Details';
+								+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, CAST(QueryPlan AS NVARCHAR(MAX)), QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , DatabaseName , Details';
 								END;
 								ELSE
                                 begin
@@ -9156,7 +9277,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 								+ @OutputTableName
 								+ ' (ServerName, CheckDate, CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered) SELECT '''
 								+ CAST(SERVERPROPERTY('ServerName') AS NVARCHAR(128))
-								+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , Details';
+								+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , DatabaseName , Details';
 								END;
 								EXEC(@StringToExecute);
 							
@@ -9192,7 +9313,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 									+ @OutputTableName
 									+ ' (ServerName, CheckDate, CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered) SELECT '''
 									+ CAST(SERVERPROPERTY('ServerName') AS NVARCHAR(128))
-									+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , Details';
+									+ ''', SYSDATETIMEOFFSET(), CheckID, DatabaseName, Priority, FindingsGroup, Finding, URL, Details, QueryPlan, QueryPlanFiltered FROM #BlitzResults ORDER BY Priority , FindingsGroup , Finding , DatabaseName , Details';
 							
 									EXEC(@StringToExecute);
 							END;

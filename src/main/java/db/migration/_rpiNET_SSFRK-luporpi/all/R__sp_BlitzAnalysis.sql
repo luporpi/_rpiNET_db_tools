@@ -35,8 +35,9 @@ ALTER PROCEDURE [dbo].[sp_BlitzAnalysis] (
 )
 AS 
 SET NOCOUNT ON;
+SET STATISTICS XML OFF;
 
-SELECT @Version = '8.02', @VersionDate = '20210322';
+SELECT @Version = '8.05', @VersionDate = '20210725';
 
 IF(@VersionCheckMode = 1)
 BEGIN

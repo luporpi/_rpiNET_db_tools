@@ -43,7 +43,7 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>9.2.1.jre11</version>
+            <version>9.4.1.jre11</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/commons-cli/commons-cli -->
         <dependency>
@@ -117,7 +117,7 @@
                                 <requireMavenVersion>
                                     <version>[3.6.3,)</version>
                                 </requireMavenVersion>
-                                <banDuplicatePomDependencyVersions />
+                                <banDuplicatePomDependencyVersions/>
                             </rules>
                         </configuration>
                     </execution>
